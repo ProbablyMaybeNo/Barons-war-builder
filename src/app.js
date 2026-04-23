@@ -211,6 +211,7 @@ function ubChangeChar(charName){
 // TABS
 // ═══════════════════════════════════════════════════════════
 function initTabs(){
+  initBrowseFilters();
   document.querySelectorAll('.tab-btn[data-tab]').forEach(btn=>{
     btn.addEventListener('click',()=>{
       document.querySelectorAll('.tab-btn[data-tab]').forEach(b=>b.classList.remove('active'));
@@ -235,6 +236,17 @@ function switchTab(tab){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
   document.getElementById('tab-'+tab)?.classList.add('active');
+}
+
+function initBrowseFilters(){
+  const options=[
+    '<option value="">All Retinues</option>',
+    ...BW_DATA.factions.map(f=>`<option value="${esc(f.faction_id)}">${esc(f.faction_name)}</option>`)
+  ].join('');
+  const factionFilter=document.getElementById('browseFactionFilter');
+  if(factionFilter)factionFilter.innerHTML=options;
+  const charsFactionFilter=document.getElementById('charsFactionFilter');
+  if(charsFactionFilter)charsFactionFilter.innerHTML=options;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -307,14 +319,15 @@ function renderRetinueFactionHdr(){
 function renderBrowse(){
   const container=document.getElementById('browseGrid');
   const search=(document.getElementById('browseSearch')?.value||'').toLowerCase();
+  const factionFilter=document.getElementById('browseFactionFilter')?.value||'';
   const kind=document.getElementById('browseKindFilter')?.value||'';
-  let units=state.faction?BW_DATA.units.filter(u=>u.faction_id===state.faction):BW_DATA.units;
+  let units=factionFilter?BW_DATA.units.filter(u=>u.faction_id===factionFilter):BW_DATA.units;
   if(kind==='commander')units=units.filter(u=>isCommanderUnit(u));
   else if(kind==='warrior')units=units.filter(u=>!isCommanderUnit(u));
   if(search)units=units.filter(u=>u.unit.toLowerCase().includes(search)||(u.full_profile||'').toLowerCase().includes(search));
   const grouped=uniqueUnits(units);
   if(!grouped.length){
-    container.innerHTML=`<div style="grid-column:1/-1;color:var(--text3);text-align:center;padding:40px 0">No units found.${!state.faction?' ← Select a retinue to filter.':''}</div>`;
+    container.innerHTML=`<div style="grid-column:1/-1;color:var(--text3);text-align:center;padding:40px 0">No units found for the current filters.</div>`;
     return;
   }
   container.innerHTML=grouped.map(u=>{
@@ -336,9 +349,21 @@ function renderBrowse(){
 
 function renderCharsBrowse(){
   const container=document.getElementById('charsBrowseList');
-  const fid=state.faction;
-  const chars=fid?BW_DATA.dramatis.filter(d=>(d.retinues||'').toLowerCase().includes(facLabel(fid).toLowerCase().split(' ')[0])):BW_DATA.dramatis;
-  const displayed=chars.length?chars:BW_DATA.dramatis;
+  const search=(document.getElementById('charsBrowseSearch')?.value||'').toLowerCase();
+  const fid=document.getElementById('charsFactionFilter')?.value||'';
+  let displayed=fid?BW_DATA.dramatis.filter(d=>(d.retinues||'').toLowerCase().includes(facLabel(fid).toLowerCase().split(' ')[0])):BW_DATA.dramatis;
+  if(search){
+    displayed=displayed.filter(d=>
+      (d.name||'').toLowerCase().includes(search)||
+      (d.retinues||'').toLowerCase().includes(search)||
+      (d.profile_and_rules||'').toLowerCase().includes(search)||
+      (d.character_abilities||'').toLowerCase().includes(search)
+    );
+  }
+  if(!displayed.length){
+    container.innerHTML=`<div style="color:var(--text3);text-align:center;padding:40px 0">No characters found for the current filters.</div>`;
+    return;
+  }
   container.innerHTML=displayed.map((d,i)=>`
     <div class="char-browse-card" id="cbc-${i}" onclick="this.classList.toggle('open')">
       <div class="cbc-name">♛ ${esc(d.name)}</div>
