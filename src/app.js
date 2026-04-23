@@ -8,6 +8,7 @@ const TIER_CSS = {Green:'tier-green',Irregular:'tier-irregular',Regular:'tier-re
 const STORAGE_KEY = 'bw_kj_v4';
 const FACTION_LABELS = {feudal_european:'Feudal European',mercenary:'Mercenary',flemish:'Flemish',poitevin:'Poitevin',medieval_scottish:'Medieval Scottish',welsh:'Welsh',outlaw:'Outlaw'};
 const TWO_HANDED = new Set(['Two Handed Weapon','Improvised Two Handed Weapon','Bill / Polearm','Dane Axe','Dual Daggers','Bill','Bill (Regulars)']);
+const COMMAND_UPGRADE_COST_OVERRIDES = {Pennant:7};
 
 // ═══════════════════════════════════════════════════════════
 // STATE
@@ -84,6 +85,16 @@ function getAvailableAbilities(fid){
   return out.sort((a,b)=>a.name.localeCompare(b.name));
 }
 
+function getCommandUpgrade(name){
+  const upgrade=CG_UPGRADES[name]||{cost:0,effect:'See core rulebook.'};
+  const override=COMMAND_UPGRADE_COST_OVERRIDES[name];
+  return override!=null?{...upgrade,cost:override}:upgrade;
+}
+
+function getCommandUpgradeCost(name){
+  return getCommandUpgrade(name).cost||0;
+}
+
 function unitMatchesCGType(unitName,cgMustFrom){
   if(!cgMustFrom)return true;
   const uL=unitName.toLowerCase();
@@ -100,7 +111,7 @@ function rowTotal(row){
   const eqC=n=>n?(EQUIP[n]?.cost||0):0;
   const eq=w*(eqC(row.selWeapon)+eqC(row.selOptWeapon)+eqC(row.selArmor)+eqC(row.selShield)+eqC(row.selMount));
   const abi=(row.selAbilities||[]).reduce((s,a)=>s+(a.cost||0),0);
-  const cg=(row.selCGUpgrades||[]).reduce((s,u)=>s+(CG_UPGRADES[u]?.cost||0),0);
+  const cg=(row.selCGUpgrades||[]).reduce((s,u)=>s+getCommandUpgradeCost(u),0);
   const misc=parseInt(row.miscExtra)||0;
   return w*pts+eq+abi+cg+misc;
 }
@@ -383,7 +394,10 @@ function renderRules(){
   }
 
   // Command upgrades
-  html+=ruleSec('⚑ Command Group Upgrades',BW_DATA.command_upgrades.map((a,i)=>abiRefItem(a.name,a.cost,a.effect,'cmd-'+i)).join(''));
+  html+=ruleSec('⚑ Command Group Upgrades',BW_DATA.command_upgrades.map((a,i)=>{
+    const cost=COMMAND_UPGRADE_COST_OVERRIDES[a.name]??a.cost;
+    return abiRefItem(a.name,cost,a.effect,'cmd-'+i);
+  }).join(''));
 
   // Equipment reference
   const kinds=['melee','missile','armour_shield','mount'];
@@ -630,7 +644,7 @@ function renderUB(){
   if(isC&&parsed.cgUpgrades.length){
     h+=`<div class="ub-st">Command Group Upgrades</div><div class="ub-cg-row">
       ${parsed.cgUpgrades.map(u=>{
-        const cg=CG_UPGRADES[u]||{cost:0,effect:'See core rulebook.'};
+        const cg=getCommandUpgrade(u);
         const ck=(_ub.selCGUpgrades||[]).includes(u);
         const pts=cg.cost>0?`+${cg.cost} pts`:'core bk';
         return `<label class="ub-cg-pill ${ck?'ck':''}"
@@ -675,9 +689,6 @@ function renderUB(){
       <input type="number" class="ub-misc-inp" value="${parseInt(_ub.ptsPerW)||0}" min="0"
              oninput="_ub.ptsPerW=parseInt(this.value)||0;ubUpdateCost()"></div>`;
   }
-  h+=`<div class="ub-misc-row"><span>Misc. extra pts:</span>
-    <input type="number" class="ub-misc-inp" value="${_ub.miscExtra||0}" min="0"
-           oninput="_ub.miscExtra=parseInt(this.value)||0;ubUpdateCost()"></div>`;
   if(parsed.notes.length)h+=`<div class="note-box" style="margin-top:9px">${esc(parsed.notes.join('\n'))}</div>`;
 
   document.getElementById('ubScroll').innerHTML=h;
@@ -800,7 +811,7 @@ function ubUpdateCost(){
   const eqC=n=>n?(EQUIP[n]?.cost||0):0;
   const eq=w*(eqC(_ub.selWeapon)+eqC(_ub.selOptWeapon)+eqC(_ub.selArmor)+eqC(_ub.selShield)+eqC(_ub.selMount));
   const abi=(_ub.selAbilities||[]).reduce((s,a)=>s+(a.cost||0),0);
-  const cg=(_ub.selCGUpgrades||[]).reduce((s,u)=>s+(CG_UPGRADES[u]?.cost||0),0);
+  const cg=(_ub.selCGUpgrades||[]).reduce((s,u)=>s+getCommandUpgradeCost(u),0);
   const misc=parseInt(_ub.miscExtra)||0;
   const base=w*pts;const total=base+eq+abi+cg+misc;
   const el=document.getElementById('ubCostPts');if(el)el.textContent=total+' pts';
