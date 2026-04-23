@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Barons' War — King John</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-logo">⚔ Barons' War <span>✦ King John</span></div>
+  <div class="tb-div"></div>
+  <span class="tb-cap-label">Cap</span>
+  <input type="number" class="tb-cap-input" id="ptsCap" value="500" min="100" max="9999" step="50">
+  <div class="pts-wrap">
+    <div class="pts-bar-bg"><div class="pts-bar-fill" id="ptsBarFill" style="width:0%"></div></div>
+    <div class="pts-nums" id="ptsNums"><span class="sp" id="ptsSpent">0</span> / <span id="ptsCap2">500</span> pts</div>
+  </div>
+  <div class="tb-ml"></div>
+  <button class="tb-btn" onclick="openSaveModal()">💾 Save / Load</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-section">
+    <div class="sb-heading">Retinue</div>
+    <div id="factionList"></div>
+  </div>
+  <div class="sb-section" id="sbListBuilder" style="display:none">
+    <div class="sb-heading">List Builder</div>
+    <div class="sb-lb">
+      <!-- +Units dropdown -->
+      <button class="sb-lb-btn" id="sbUnitsBtn" onclick="toggleSBDropdown('units')">
+        <span>+ Units</span><span class="arrow">▼</span>
+      </button>
+      <div class="sb-dropdown" id="sbUnitsDropdown">
+        <div class="sb-drop-scroll" id="sbUnitsList"></div>
+      </div>
+      <!-- +Characters dropdown -->
+      <button class="sb-lb-btn" id="sbCharsBtn" onclick="toggleSBDropdown('chars')">
+        <span>+ Characters</span><span class="arrow">▼</span>
+      </button>
+      <div class="sb-dropdown" id="sbCharsDropdown">
+        <div class="sb-drop-scroll" id="sbCharsList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="retinue">⚔ Retinue</button>
+    <button class="tab-btn" data-tab="units">☰ Units</button>
+    <button class="tab-btn" data-tab="rules">⚖ Rules</button>
+  </div>
+
+  <!-- RETINUE TAB -->
+  <div class="tab-panel active" id="tab-retinue">
+    <div class="p-inner">
+      <div id="retinueAlertBar"></div>
+      <div id="retinueFactionHdr" style="display:none"></div>
+      <div class="rcard-grid" id="rcardGrid"></div>
+      <div class="empty-state" id="emptyState">
+        <h3>Your Retinue is Empty</h3>
+        <p>Select a Retinue from the sidebar to get started.</p>
+        <p class="prompt">← Then use <strong>+ Units</strong> to add warriors to your list.</p>
+      </div>
+      <div class="retinue-total" id="retinueTotal" style="display:none">
+        <span class="rt-label">Total Points Spent</span>
+        <span class="rt-pts" id="retinueTotalPts">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- UNITS TAB -->
+  <div class="tab-panel" id="tab-units">
+    <div class="p-inner">
+      <div class="sub-tabs">
+        <button class="sub-tab-btn active" data-sub="browse-units">Units</button>
+        <button class="sub-tab-btn" data-sub="browse-chars">Characters</button>
+      </div>
+      <div class="sub-panel active" id="sub-browse-units">
+        <div class="browse-toolbar">
+          <input type="text" class="browse-search" id="browseSearch" placeholder="Search units…" oninput="renderBrowse()">
+          <select class="browse-filter" id="browseKindFilter" onchange="renderBrowse()">
+            <option value="">All</option>
+            <option value="commander">Commanders</option>
+            <option value="warrior">Warriors</option>
+          </select>
+        </div>
+        <div class="browse-grid" id="browseGrid"></div>
+      </div>
+      <div class="sub-panel" id="sub-browse-chars">
+        <div class="info-box">Historical commanders — points costs are in the printed King John supplement.</div>
+        <div id="charsBrowseList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RULES TAB -->
+  <div class="tab-panel" id="tab-rules">
+    <div class="p-inner" id="rulesPanel"></div>
+  </div>
+
+</div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- SAVE MODAL -->
+<div class="modal-overlay" id="saveModalOverlay" onclick="if(event.target===this)closeSaveModal()">
+  <div class="save-modal">
+    <div class="save-modal-hdr">
+      <div class="save-modal-title">💾 Save / Load Retinues</div>
+      <button class="modal-close" onclick="closeSaveModal()">✕</button>
+    </div>
+    <div class="save-modal-body">
+      <div class="sm-label">Save current retinue</div>
+      <div class="sm-row">
+        <input type="text" class="sm-input" id="saveNameInput" placeholder="Retinue name…" maxlength="40">
+        <button class="sm-btn" onclick="doSave()">Save</button>
+      </div>
+      <div class="sm-label">Saved retinues</div>
+      <div id="savedListContainer"></div>
+    </div>
+  </div>
+</div>
+<script src="./data.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
