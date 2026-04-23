@@ -414,3 +414,203 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--bg);color
 .sec-hdr-lbl{font-family:'Cinzel',serif;font-size:.63rem;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
 .sec-hdr-ct{font-family:'Cinzel',serif;font-size:.62rem;color:var(--amber2);background:rgba(232,160,32,.1);padding:1px 6px;border-radius:10px}
 
+@media (max-width: 900px){
+  html,body{height:auto;min-height:100%}
+  .app{height:auto;min-height:100vh;overflow:visible}
+  .main{flex-direction:column;overflow:visible}
+  .sidebar{width:100%;border-right:none;border-bottom:2px solid var(--border);overflow:visible}
+  .content{min-width:0}
+  .browse-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+  .ub-modal{max-width:none}
+  .ub-tip{width:180px}
+}
+
+@media (max-width: 700px){
+  .topbar{
+    padding:10px 12px;
+    flex-wrap:wrap;
+    align-items:center;
+    row-gap:10px;
+  }
+  .tb-logo{
+    width:100%;
+    padding:0;
+    font-size:1.02rem;
+  }
+  .tb-div,
+  .tb-ml{display:none}
+  .tb-cap-label{order:2}
+  .tb-cap-input{
+    order:3;
+    width:84px;
+  }
+  .pts-wrap{
+    order:4;
+    width:100%;
+    justify-content:space-between;
+  }
+  .pts-bar-bg{flex:1;width:auto}
+  .pts-nums{font-size:.76rem}
+  .tb-btn{
+    order:5;
+    width:100%;
+    padding:9px 12px;
+    font-size:.72rem;
+  }
+
+  .tabs,
+  .sub-tabs{
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .tabs::-webkit-scrollbar,
+  .sub-tabs::-webkit-scrollbar{display:none}
+  .tab-btn,
+  .sub-tab-btn{
+    flex:1 0 auto;
+    padding:11px 14px;
+  }
+  .p-inner{padding:14px}
+
+  .sb-heading{padding:10px 12px 8px}
+  .faction-btn{padding:10px 12px}
+  .sb-lb{padding:12px}
+  .sb-lb-btn{
+    margin-bottom:8px;
+    padding:10px 12px;
+    font-size:.74rem;
+  }
+
+  .browse-toolbar{
+    flex-direction:column;
+    gap:10px;
+  }
+  .browse-filter,
+  .browse-search{
+    width:100%;
+  }
+  .browse-grid{grid-template-columns:1fr}
+  .bc-hdr{gap:8px}
+
+  .retinue-total{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:6px;
+  }
+  .rrow-top{
+    flex-direction:column;
+    gap:10px;
+  }
+  .rrow-right{
+    width:100%;
+    flex-direction:row;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .rrow-btns{flex-shrink:0}
+  .rrow-cg{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+  .rrow-cg-sel{width:100%}
+
+  .abi-ref-hdr{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:6px;
+  }
+  .equip-ref-table{
+    display:block;
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+
+  .save-modal{
+    max-width:none;
+    max-height:90vh;
+  }
+  .save-modal-hdr,
+  .save-modal-body{padding-left:14px;padding-right:14px}
+  .sm-row{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .sm-btn{width:100%}
+  .saved-item{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
+  }
+  .saved-item-actions{width:100%}
+  .sl-btn{flex:1;text-align:center}
+
+  .ub-modal{
+    flex-direction:column;
+    height:calc(100vh - 20px);
+    max-height:calc(100vh - 20px);
+  }
+  .ub-main{min-height:0}
+  .ub-hdr,
+  .ub-scroll,
+  .ub-cost-bar{
+    padding-left:14px;
+    padding-right:14px;
+  }
+  .ub-sels.two,
+  .ub-sels.three,
+  .ub-eq-cols,
+  .ub-abi-grid{
+    grid-template-columns:1fr;
+  }
+  .ub-stats-grid{grid-template-columns:repeat(3,1fr)}
+  .ub-cost-bar{
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+  }
+  .ub-btns{
+    width:100%;
+  }
+  .ub-cancel,
+  .ub-save{
+    flex:1;
+    text-align:center;
+  }
+  .ub-tip{
+    width:100%;
+    border-left:none;
+    border-top:1px solid var(--border);
+    max-height:140px;
+  }
+}
+
+@media (max-width: 480px){
+  .tb-logo span{display:block;margin-top:2px}
+  .tab-btn,
+  .sub-tab-btn{
+    font-size:.62rem;
+    padding:10px 12px;
+  }
+  .empty-state{padding:36px 12px}
+  .rrow{
+    padding:10px;
+  }
+  .rrow-right{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
+  }
+  .rrow-btns{
+    width:100%;
+  }
+  .rrow-edit,
+  .rrow-del{
+    flex:1;
+    text-align:center;
+  }
+  .ub-hdr-title{font-size:.85rem}
+  .ub-stat-val{font-size:.84rem}
+  .ub-eq-opt,
+  .ub-abi-it{font-size:.78rem}
+}
+

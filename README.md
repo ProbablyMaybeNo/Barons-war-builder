@@ -22,6 +22,14 @@ Run the lightweight smoke check with:
 npm run check
 ```
 
+Run a local preview server with:
+
+```bash
+npm run preview
+```
+
+Mobile testing notes live in [docs/mobile-qa.md](/D:/AI-Workstation/Antigravity/apps/Barons%20War%20List%20Builder/docs/mobile-qa.md:1).
+
 ## GitHub Pages
 
 This repository now includes a Pages deployment workflow at `.github/workflows/pages.yml`.

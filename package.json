@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node ./tools/smoke-check.mjs"
+    "check": "node ./tools/smoke-check.mjs",
+    "preview": "python -m http.server 4173"
   }
 }
