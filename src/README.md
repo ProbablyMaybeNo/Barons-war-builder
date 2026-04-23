@@ -1,15 +1,20 @@
-# Future app scaffold
+# App source
 
-This folder is reserved for the cleaned-up application that will eventually replace the legacy static app.
+`src/app.js` is the current live runtime for the static app.
 
-## Intended direction
+This is still a transitional file, but it is now separated from:
 
-- `src/data` for normalized Barons' War data loaders and schemas
+- HTML shell in `index.html`
+- styles in `assets/styles/app.css`
+- game data in `data/game-data.js`
+
+## Intended next split
+
 - `src/domain` for roster, validation, and points logic
-- `src/ui` for any future interface layer
-- `src/lib` for small shared helpers
+- `src/ui` for rendering and modal behavior
+- `src/lib` for shared helpers
 
 ## Rule for refactors
 
 Do not rebuild from scratch unless necessary.
-Start by porting stable behavior out of `legacy/` in small steps.
+Port stable behavior out of the extracted app in small, testable steps.

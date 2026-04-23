@@ -1,58 +1,44 @@
 # Barons War Builder
 
-A Codex-friendly starter repository for building a **Barons' War** list builder.
+Static roster builder for **Barons' War: King John** with a GitHub Pages-friendly structure.
 
-## Purpose
+## Current status
 
-This project is intended to become a practical roster and list-building tool for Barons' War. The goal is to create a clean, maintainable codebase that can be worked on effectively with ChatGPT Codex and other coding agents.
+The original attached prototype has now been unpacked into separate repo assets so the app can be maintained in GitHub without living inside one giant HTML file.
 
-## Initial goals
+- `index.html` contains the live app shell
+- `assets/styles/app.css` contains the extracted styling
+- `data/game-data.js` contains the extracted roster data
+- `src/app.js` contains the live builder logic
+- `legacy/Barons_War_KingJohn_List_Builder.source.html` preserves the original reference build
 
-- Store faction, unit, upgrade, and equipment data in a structured format
-- Validate lists against Barons' War army-building rules
-- Calculate points totals automatically
-- Provide a clear foundation for either:
-  - a simple web app, or
-  - a data-first backend that can later power a UI
+## Local usage
 
-## Suggested first milestones
+Open `index.html` directly in a browser for quick checks, or serve the repo root with any static server.
 
-1. Define the project data model
-2. Add sample Barons' War data files
-3. Build a rules validation layer
-4. Build a basic roster builder flow
-5. Add import/export support
+Run the lightweight smoke check with:
 
-## Recommended stack
-
-This repo is currently scaffolded to be flexible. A good starting path would be:
-
-- **TypeScript**
-- **Next.js** or **Vite + React** for UI
-- **JSON** or **SQLite** for structured game data
-- **Zod** for schema validation
-
-## Repository structure
-
-```text
-/docs              Project notes, rules assumptions, planning docs
-/data              Structured game data files
-/src               Application source code
-/tests             Tests
+```bash
+npm run check
 ```
 
-## Working with Codex
+## GitHub Pages
 
-Codex should:
+This repository now includes a Pages deployment workflow at `.github/workflows/pages.yml`.
 
-- make focused, minimal changes
-- avoid unnecessary rewrites
-- preserve existing patterns
-- document assumptions when rules are unclear
-- prefer structured data and validation over hard-coded UI logic
+To publish the app:
 
-See `AGENTS.md` for repo-specific working instructions.
+1. Push `main` to GitHub.
+2. In GitHub repository settings, set Pages to use GitHub Actions if it is not already enabled.
+3. The workflow will deploy the repo root as a static site.
+
+## Next refactor targets
+
+- break `src/app.js` into domain and UI modules
+- normalize `data/game-data.js` into smaller files
+- replace inline event handlers with event delegation
+- add real rules and points regression tests
 
 ## Notes
 
-This repository does **not** include Barons' War rules text or proprietary material by default. Any game data added should be reviewed for copyright and licensing considerations before publication.
+This repository includes gameplay reference data extracted from the working prototype. Review any published rules text or proprietary material for licensing and fair-use concerns before broad public distribution.
