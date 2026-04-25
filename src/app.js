@@ -16,11 +16,6 @@ const FACTION_LABELS = {feudal_european:'Feudal European',mercenary:'Mercenary',
 const TWO_HANDED = new Set(['Two Handed Weapon','Improvised Two Handed Weapon','Bill / Polearm','Dane Axe','Dual Daggers','Bill','Bill (Regulars)']);
 const COMMAND_UPGRADE_COST_OVERRIDES = {Pennant:7};
 const WEAPON_CHOICE_RANGED_OPTIONS = ['Javelin','Bow'];
-const WEAPON_CHOICE_UNIT_OVERRIDES = new Set([
-  // The source data profile does not currently mark this rule, but Galwegians
-  // can add these ranged weapons through Weapon Choice.
-  'medieval_scottish::Galwegians',
-]);
 
 // ═══════════════════════════════════════════════════════════
 // STATE
@@ -111,8 +106,6 @@ function selectedAbilityEffect(row, abilityName){
 }
 
 function hasRangedWeaponChoice(row, inherent=getInherent(row?.unitData?.full_profile||'')){
-  const unitKey=`${row?.faction_id||''}::${row?.unit||''}`;
-  if(WEAPON_CHOICE_UNIT_OVERRIDES.has(unitKey))return true;
   if(inherent.some(a=>/^Weapon Choices?$/i.test(a)))return true;
   return (row?.selAbilities||[]).some(a=>
     /^Weapon Choices?$/i.test(a.name||'') && /Ranged Weapon/i.test(selectedAbilityEffect(row,a.name))
