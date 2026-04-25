@@ -897,10 +897,20 @@ function renderUB(){
   if(!_ub)return;
   const fid=_ub.faction_id;
   const allU=uniqueUnits(BW_DATA.units.filter(u=>u.faction_id===fid));
+  const isCustom=!!_ub._isCustom;
   const tiers=getUnitTiers(fid,_ub.unit);
-  const parsed=parseProfile(_ub.unitData?.full_profile||'');
-  const inherent=getInherent(_ub.unitData?.full_profile||'');
-  const isC=_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
+  // For custom commanders, synthesise a profile that allows any equipment
+  const customParsed={
+    weaponsMust:BW_DATA.equipment.filter(e=>e.kind==='melee').map(e=>e.name),
+    weaponsMay:BW_DATA.equipment.filter(e=>e.kind==='missile').map(e=>e.name),
+    armor:['Padded','Mail'],
+    shields:['Small Shield','Medium Shield','Large Shield'],
+    mounts:['Horse','Barded Horse','Pony'],
+    cgUpgrades:[],cgMustFrom:'',notes:[]
+  };
+  const parsed=isCustom?customParsed:parseProfile(_ub.unitData?.full_profile||'');
+  const inherent=isCustom?[]:getInherent(_ub.unitData?.full_profile||'');
+  const isC=isCustom||_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
   const isNamed=_ub.tier==='Named';
   const stats=calcStats(_ub);
   let h='';
@@ -914,18 +924,35 @@ function renderUB(){
       <select class="ub-sel" onchange="${isChar?'ubChangeChar':'ubChangeUnit'}(this.value)">
         ${isChar
           ? charList.map(u=>`<option value="${esc(u.name)}" ${u.name===_ub.unit?'selected':''}>${esc(u.name)}</option>`).join('')
-          : allU.map(u=>`<option value="${esc(u.unit)}" ${u.unit===_ub.unit?'selected':''}>${esc(u.unit)}${isCommanderUnit(u)?'  ♟':''}</option>`).join('')
+          : `<option value="__custom__" ${isCustom?'selected':''}>★ Custom Commander</option>`+
+            allU.map(u=>`<option value="${esc(u.unit)}" ${!isCustom&&u.unit===_ub.unit?'selected':''}>${esc(u.unit)}${isCommanderUnit(u)?'  ♟':''}</option>`).join('')
         }
       </select></div>
     <div class="ub-field"><label>Experience</label>
       <select class="ub-sel" ${isChar?'disabled style="opacity:.5"':''} onchange="ubChangeTier(this.value)">
-        ${tiers.map(t=>`<option value="${esc(t.experience_tier)}" ${t.experience_tier===_ub.tier?'selected':''}>${esc(t.experience_tier)} (${t.pts_per_warrior} pts)</option>`).join('')}
+        ${isCustom
+          ? ['Green','Irregular','Regular','Veteran'].map(t=>`<option value="${t}" ${_ub.tier===t?'selected':''}>${t}</option>`).join('')
+          : tiers.map(t=>`<option value="${esc(t.experience_tier)}" ${t.experience_tier===_ub.tier?'selected':''}>${esc(t.experience_tier)} (${t.pts_per_warrior} pts)</option>`).join('')}
         ${isNamed?`<option value="Named" selected>Named Character</option>`:''}
       </select></div>
     ${!isC?`<div class="ub-field"><label>Count</label>
       <input type="number" class="ub-inp" value="${parseInt(_ub.warriors)||1}" min="1" max="50"
-             oninput="_ub.warriors=parseInt(this.value)||1;ubUpdateCost()"></div>`:''}
+             oninput="ubSet('warriors',parseInt(this.value)||1)"></div>`:''}
   </div>`;
+
+  // Custom commander extra fields: name + tier rank
+  if(isCustom){
+    h+=`<div class="ub-sels two">
+      <div class="ub-field"><label>Name</label>
+        <input type="text" class="ub-inp" value="${esc(_ub.unit)}" placeholder="Custom Commander"
+               oninput="ubChangeCustomName(this.value)"></div>
+      <div class="ub-field"><label>Commander Tier (no Tier 3)</label>
+        <select class="ub-sel" onchange="ubChangeCustomRank(this.value)">
+          <option value="1" ${_ub.customRank===1?'selected':''}>Tier 1 (1 ability)</option>
+          <option value="2" ${_ub.customRank===2?'selected':''}>Tier 2 (2 abilities)</option>
+        </select></div>
+    </div>`;
+  }
 
   // Stats
   if(!isNamed){
@@ -968,7 +995,7 @@ function renderUB(){
   const abils=getAvailableAbilities(fid);
   const selA=_ub.selAbilities||[];
   const selN=new Set(selA.map(a=>a.name));
-  const lim=isC?getAbilityLimit(_ub.unit):0;
+  const lim=isCustom?(parseInt(_ub.customRank)||2):(isC?getAbilityLimit(_ub.unit):0);
   const atLim=isC&&selA.length>=lim;
   // Look up descriptions for inherent abilities (from purchasable, retinue, or CG_UPGRADES)
   const inhDetails=inherent.map(name=>{
@@ -1009,7 +1036,13 @@ function renderUB(){
   if(isNamed){
     h+=`<div class="ub-misc-row"><span>Points cost (from supplement):</span>
       <input type="number" class="ub-misc-inp" value="${parseInt(_ub.ptsPerW)||0}" min="0"
-             oninput="_ub.ptsPerW=parseInt(this.value)||0;ubUpdateCost()"></div>`;
+             oninput="ubSet('ptsPerW',parseInt(this.value)||0)"></div>`;
+  }
+  if(isCustom){
+    h+=`<div class="ub-misc-row"><span>Base points cost (Knight Commander Generator):</span>
+      <input type="number" class="ub-misc-inp" value="${parseInt(_ub.ptsPerW)||0}" min="0"
+             oninput="ubSet('ptsPerW',parseInt(this.value)||0)"></div>
+      <div class="amber-box" style="margin-top:6px;font-size:.78rem">Enter the base points cost from the Knight Commander Generator in the rulebook. Equipment, abilities and command-group upgrades are added automatically below.</div>`;
   }
   if(parsed.notes.length)h+=`<div class="note-box" style="margin-top:9px">${esc(parsed.notes.join('\n'))}</div>`;
 
@@ -1050,11 +1083,27 @@ function ubEqSec(sec){
 }
 
 function ubChangeUnit(newUnit){
+  if(newUnit==='__custom__'){
+    _ub._isCustom=true;
+    _ub.unit='Custom Commander';
+    _ub.kind='commander';
+    _ub.customRank=2;
+    _ub.tier='Regular';
+    _ub.ptsPerW=0;
+    _ub.unitData=null;
+    _ub.selWeapon=null;_ub.selOptWeapon=null;_ub.selArmor=null;_ub.selShield=null;_ub.selMount=null;
+    _ub.selAbilities=[];_ub.selCGUpgrades=[];
+    _ub.warriors=1;
+    document.getElementById('ubTitle').textContent='Custom Commander';
+    renderUB();
+    return;
+  }
   const fid=_ub.faction_id;
   const tiers=getUnitTiers(fid,newUnit);
   if(!tiers.length)return;
   const uData=tiers.find(t=>t.experience_tier==='Regular')||tiers[0];
   const parsed=parseProfile(uData.full_profile||'');
+  _ub._isCustom=false;_ub.customRank=undefined;
   _ub.unit=newUnit;_ub.tier=uData.experience_tier;_ub.ptsPerW=uData.pts_per_warrior;_ub.unitData=uData;
   _ub.kind=isCommanderUnit(uData)?'commander':(uData.kind||'warrior');
   _ub.warriors=_ub.kind==='commander'?1:5;
@@ -1066,7 +1115,35 @@ function ubChangeUnit(newUnit){
   renderUB();
 }
 
+function ubChangeCustomRank(v){
+  _ub.customRank=parseInt(v)||2;
+  // Trim abilities if reducing rank
+  if((_ub.selAbilities||[]).length>_ub.customRank)_ub.selAbilities=_ub.selAbilities.slice(0,_ub.customRank);
+  renderUB();
+}
+
+function ubChangeCustomName(name){
+  _ub.unit=(name||'').trim()||'Custom Commander';
+}
+
+// Window-exposed setter so inline handlers can mutate the module-scoped _ub
+function ubSet(field,val){
+  if(!_ub)return;
+  _ub[field]=val;
+  ubUpdateCost();
+}
+
 function ubChangeTier(newTier){
+  if(_ub._isCustom){
+    _ub.tier=newTier;
+    ubUpdateCost();
+    const stats=calcStats(_ub);
+    ['Move','Attack','Defence','Shield','Morale','Actions'].forEach((l,i)=>{
+      const el=document.getElementById('ubStat'+l);
+      if(el)el.textContent=[stats.move,stats.attack,stats.defence,stats.shield,stats.morale,stats.actions][i];
+    });
+    return;
+  }
   const fid=_ub.faction_id;
   const uData=BW_DATA.units.find(u=>u.faction_id===fid&&u.unit===_ub.unit&&u.experience_tier===newTier);
   if(!uData)return;
@@ -1105,9 +1182,9 @@ function ubTogCG(name,ck){
 
 function ubTogAbi(name,cost,ck){
   if(!_ub.selAbilities)_ub.selAbilities=[];
-  const isC=_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
+  const isC=_ub._isCustom||_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
   if(COMMANDER_ONLY_ABIS.has(name.toUpperCase())&&!isC)return; // warriors can't take commander-only
-  const lim=isC?getAbilityLimit(_ub.unit):999;
+  const lim=_ub._isCustom?(parseInt(_ub.customRank)||2):(isC?getAbilityLimit(_ub.unit):999);
   if(ck){if(isC&&_ub.selAbilities.length>=lim)return;if(!_ub.selAbilities.find(a=>a.name===name))_ub.selAbilities.push({name,cost});}
   else _ub.selAbilities=_ub.selAbilities.filter(a=>a.name!==name);
   const selN=new Set(_ub.selAbilities.map(a=>a.name));
@@ -1127,7 +1204,7 @@ function ubTogAbi(name,cost,ck){
 
 function ubUpdateCost(){
   if(!_ub)return;
-  const isC=_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
+  const isC=_ub._isCustom||_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
   const w=isC?1:Math.max(1,parseInt(_ub.warriors)||1);
   const pts=parseInt(_ub.ptsPerW)||parseInt(_ub.unitData?.pts_per_warrior)||0;
   const eqC=n=>n?(EQUIP[n]?.cost||0):0;
@@ -1236,6 +1313,7 @@ function renderRow(row){
         <div class="rrow-name-line">
           <span class="rrow-name">${esc(row.unit)}</span>
           <span class="rrow-tier ${tcls}">${esc(row.tier)}</span>
+          ${row._isCustom?`<span class="rrow-custom" title="Custom Commander (Knight Commander Generator)">★ Custom T${row.customRank||2}</span>`:''}
           ${!isC?`<span class="rrow-count">×${parseInt(row.warriors)||1}</span>`:''}
         </div>
         ${hasTags?`<div class="rrow-tags">${eqTags}${cgTags}${inhTags}${abiTags}</div>`:''}
@@ -1297,6 +1375,9 @@ Object.assign(window, {
   ubChangeChar,
   ubChangeUnit,
   ubChangeTier,
+  ubChangeCustomRank,
+  ubChangeCustomName,
+  ubSet,
   ubEquip,
   ubTogCG,
   ubTogAbi,
