@@ -258,8 +258,8 @@ function pickAddFaction(){
   return state.factions[idx]||null;
 }
 
-function openSBUnitModal(){
-  const fid=pickAddFaction();
+function openSBUnitModal(fid){
+  fid=fid||pickAddFaction();
   if(!fid){alert('Add a Retinue first.');return;}
   const warriors=uniqueUnits(BW_DATA.units.filter(u=>u.faction_id===fid&&!isCommanderUnit(u)));
   const first=warriors.length?warriors[0]:uniqueUnits(BW_DATA.units.filter(u=>u.faction_id===fid))[0];
@@ -267,8 +267,8 @@ function openSBUnitModal(){
   openUBNew(fid,first.unit,'Regular');
 }
 
-function openSBCharModal(){
-  const fid=pickAddFaction();
+function openSBCharModal(fid){
+  fid=fid||pickAddFaction();
   if(!fid){alert('Add a Retinue first.');return;}
   const chars=getFactChars(fid);
   if(!chars.length){alert('No named characters available for this retinue.');return;}
@@ -1149,11 +1149,13 @@ function renderRetinue(){
   const empty=document.getElementById('emptyState');
   const total=document.getElementById('retinueTotal');
   if(!grid)return;
-  if(!state.list.length){
+  // Empty state only when no retinues are selected at all
+  if(!state.factions.length){
     grid.innerHTML='';if(empty)empty.style.display='block';if(total)total.style.display='none';
     updatePtsBar();return;
   }
-  if(empty)empty.style.display='none';if(total)total.style.display='flex';
+  if(empty)empty.style.display='none';
+  if(total)total.style.display=state.list.length?'flex':'none';
   // Order: selected factions first, then any orphan rows (faction not in selection)
   const factionOrder=[...state.factions];
   for(const r of state.list)if(r.faction_id&&!factionOrder.includes(r.faction_id))factionOrder.push(r.faction_id);
@@ -1161,15 +1163,26 @@ function renderRetinue(){
   let h='';
   for(const fid of factionOrder){
     const rows=factionRows(fid);
-    if(!rows.length)continue;
     const cmds=rows.filter(r=>r.kind==='commander');
     const wars=rows.filter(r=>r.kind!=='commander');
-    if(multi){
-      const sub=factionPts(fid);
-      const role=factionRole(fid);
-      const badge=`<span class="ret-badge ${role}">${role==='liege'?'Liege':'Ally'}</span>`;
-      const liegeBtn=role==='ally'?`<button class="ret-group-liege" title="Promote this retinue to Liege" onclick="uiSetLiege('${fid}')">★ Make Liege</button>`:'';
-      h+=`<div class="ret-group-hdr"><span class="ret-group-name">⚜ ${esc(facLabel(fid))} ${badge}</span><span class="ret-group-actions"><span class="ret-group-sub">${sub} pts</span>${liegeBtn}</span></div>`;
+    const sub=factionPts(fid);
+    const role=factionRole(fid);
+    const badge=multi?`<span class="ret-badge ${role}">${role==='liege'?'Liege':'Ally'}</span>`:'';
+    const liegeBtn=multi&&role==='ally'?`<button class="ret-group-liege" title="Promote this retinue to Liege" onclick="uiSetLiege('${fid}')">★ Make Liege</button>`:'';
+    h+=`<div class="ret-group-hdr">
+      <div class="ret-group-main">
+        <span class="ret-group-name">⚜ ${esc(facLabel(fid))} ${badge}</span>
+        <span class="ret-group-sub">${sub} pts</span>
+      </div>
+      <div class="ret-group-actions-col">
+        <button class="ret-group-add" onclick="openSBUnitModal('${fid}')">+ Units</button>
+        <button class="ret-group-add" onclick="openSBCharModal('${fid}')">+ Characters</button>
+        ${liegeBtn}
+      </div>
+    </div>`;
+    if(!rows.length){
+      h+=`<div class="ret-group-empty">No units yet — use + Units or + Characters above to add to this retinue.</div>`;
+      continue;
     }
     if(cmds.length){
       h+=`<div class="sec-hdr"><div class="sec-hdr-line"></div><span class="sec-hdr-lbl">Commanders</span><span class="sec-hdr-ct">${cmds.length}</span><div class="sec-hdr-line"></div></div>`;
