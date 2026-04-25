@@ -516,16 +516,7 @@ function collectAlerts(spent){
 }
 
 function renderAlerts(spent){
-  const bar=document.getElementById('retinueAlertBar');
   const{alerts,infos}=collectAlerts(spent);
-  if(bar){
-    if(!state.factions.length||!state.list.length||(!alerts.length&&!infos.length)){
-      bar.innerHTML='';bar.className='alert-bar';
-    } else {
-      bar.className='alert-bar '+(alerts.length?'error':'info');
-      bar.innerHTML=`<div class="alert-title">${alerts.length?`⚠ List Issues (${alerts.length})`:'ℹ Notes'}</div>${[...alerts,...infos].map(a=>`<div>${a}</div>`).join('')}`;
-    }
-  }
   renderSidebarIssues(alerts,infos);
 }
 
