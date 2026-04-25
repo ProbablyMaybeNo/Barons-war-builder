@@ -267,26 +267,150 @@ function updatePtsBar(){
   renderAlerts(spent);
 }
 
+// Heuristic: cavalry if mounted unit name, equipped mount, or has horsemen-style name
+function isCavalryRow(row){
+  const u=(row.unit||'').toLowerCase();
+  if(u.startsWith('mounted ')||u.includes('horsem')||u.includes('light cavalry'))return true;
+  if(row.selMount&&EQUIP[row.selMount]?.kind==='mount')return true;
+  return false;
+}
+
+// Sum of points spent on Commanders plus their assigned Command Group rows
+function commanderAndCgPts(){
+  const cmds=state.list.filter(r=>r.kind==='commander');
+  const seen=new Set();
+  let total=0;
+  for(const c of cmds){
+    if(!seen.has(c.id)){total+=rowTotal(c);seen.add(c.id);}
+    if(c.commandGroupRowId){
+      const cg=state.list.find(r=>r.id===c.commandGroupRowId);
+      if(cg&&!seen.has(cg.id)){total+=rowTotal(cg);seen.add(cg.id);}
+    }
+  }
+  return total;
+}
+
+// Names mandated to be the Retinue Leader if included in the list
+const MANDATORY_LEADER_NAMES=new Set(['King John','King Alexander II','Robin Hood','King Philip II of France','Prince Louis of France','Welsh King','Mounted Welsh King']);
+// Mercenary Company Abilities (only one allowed per Mercenary Retinue)
+const MERC_COMPANY_ABILITIES=new Set(['BRABANCON','BRABANÇON','FLEMISH','GASCON']);
+
 function renderAlerts(spent){
   const bar=document.getElementById('retinueAlertBar');
   if(!state.faction||!state.list.length){bar.innerHTML='';return;}
-  const f=fac(state.faction);const alerts=[],infos=[];
+  const f=fac(state.faction);
+  const alerts=[],infos=[];
+  const cmds=state.list.filter(r=>r.kind==='commander');
+  const warriors=state.list.filter(r=>r.kind!=='commander');
+
+  // ── HARD LEGALITY CHECKS ─────────────────────────────────
   if(spent>state.ptsCap)alerts.push(`⚠ Over cap by ${spent-state.ptsCap} pts`);
+
+  if(!cmds.length)alerts.push('⚠ No Commander in retinue (every list needs at least one Commander as Retinue Leader)');
+
+  // 50% Commanders + Command Groups cap
+  if(spent>0){
+    const cmdPts=commanderAndCgPts();
+    const pct=(cmdPts/spent)*100;
+    if(pct>50)alerts.push(`⚠ Commanders + Command Groups: ${pct.toFixed(0)}% of points (max 50%)`);
+  }
+
+  // Green troop minimum (faction-aware; mercenaries exempt via green_min_pct=0)
   if(f?.green_min_pct>0){
     const gp=state.list.filter(r=>r.tier==='Green').reduce((s,r)=>s+rowTotal(r),0);
     const pct=spent>0?(gp/spent)*100:0;
-    if(pct<f.green_min_pct)alerts.push(`⚠ Green troops: ${pct.toFixed(0)}% (min ${f.green_min_pct}%)`);
+    if(pct<f.green_min_pct)alerts.push(`⚠ Green troops: ${pct.toFixed(0)}% (min ${f.green_min_pct}% — Faction trait requires Green troops in the Retinue)`);
   }
+
+  // Scottish: 20% on Rabble Groups
   if(f?.rabble_min_pct){
     const rp=state.list.filter(r=>r.hasRabble).reduce((s,r)=>s+rowTotal(r),0);
     const pct=spent>0?(rp/spent)*100:0;
-    if(pct<f.rabble_min_pct)alerts.push(`⚠ Rabble Groups: ${pct.toFixed(0)}% (Horseless Classes requires ${f.rabble_min_pct}%)`);
+    if(pct<f.rabble_min_pct)alerts.push(`⚠ Rabble Groups: ${pct.toFixed(0)}% (Horseless Classes requires ${f.rabble_min_pct}% on Groups with Rabble)`);
   }
-  if(state.faction==='outlaw')infos.push('ℹ Outlaw: Allied Retinues only. Leader may never be Liege Lord.');
-  if(state.list.length&&!state.list.find(r=>r.kind==='commander'))alerts.push('⚠ No Commander in retinue');
+
+  // Group sizes: min 4 infantry, 2 cavalry
+  for(const r of warriors){
+    const w=parseInt(r.warriors)||1;
+    const cav=isCavalryRow(r);
+    const min=cav?2:4;
+    if(w<min)alerts.push(`⚠ ${esc(r.unit)} ×${w}: below minimum Group size (${min} ${cav?'cavalry':'infantry'})`);
+  }
+
+  // Each Commander needs a Command Group assigned
+  for(const c of cmds){
+    if(!c.commandGroupRowId)alerts.push(`⚠ ${esc(c.unit)}: Commander has no assigned Command Group`);
+  }
+
+  // Duplicate purchasable abilities across the retinue (each may be chosen only once per Retinue)
+  const purchasableNames=new Set(BW_DATA.purchasable.map(a=>a.name));
+  const abilityCounts={};
+  for(const r of state.list)for(const a of (r.selAbilities||[]))abilityCounts[a.name]=(abilityCounts[a.name]||0)+1;
+  for(const[name,count]of Object.entries(abilityCounts)){
+    if(count>1&&purchasableNames.has(name))alerts.push(`⚠ Purchasable Ability "${esc(name)}" used ${count}× (each may be chosen only once per Retinue)`);
+  }
+
+  // Duplicate named characters
+  const namedCounts={};
+  for(const r of state.list)if(r.tier==='Named')namedCounts[r.unit]=(namedCounts[r.unit]||0)+1;
+  for(const[name,count]of Object.entries(namedCounts)){
+    if(count>1)alerts.push(`⚠ Named character "${esc(name)}" included ${count}× (only one of each per Retinue)`);
+  }
+
+  // ── RETINUE-SPECIFIC RULES ──────────────────────────────
+  if(state.faction==='poitevin'){
+    const baronRows=state.list.filter(r=>/baron/i.test(r.unit||''));
+    if(baronRows.length)alerts.push('⚠ Poitevin: Barons (Tier 3 Commanders) are not allowed in this Retinue');
+    const paladins=state.list.filter(r=>/paladin/i.test(r.unit||''));
+    if(paladins.length)infos.push('ℹ Poitevin: a Paladin may not be chosen as Retinue Leader at list-build (may take command if the Leader dies)');
+  }
+
+  if(state.faction==='welsh'){
+    const penteulu=state.list.filter(r=>(r.selAbilities||[]).some(a=>a.name.toUpperCase()==='PENTEULU'));
+    if(penteulu.length>1)alerts.push(`⚠ Welsh: ${penteulu.length} Penteulu selected (max 1 per Retinue)`);
+    if(penteulu.length)infos.push('ℹ Welsh: a Penteulu cannot be the Retinue Leader');
+  }
+
+  if(state.faction==='medieval_scottish'){
+    const ettrick=state.list.filter(r=>(r.selAbilities||[]).some(a=>a.name.toUpperCase()==='ETTRICK ARCHERS'));
+    if(ettrick.length>1)alerts.push(`⚠ Scottish: Ettrick Archers used ${ettrick.length}× (may be chosen only once per Retinue, on a Bow-equipped Group)`);
+  }
+
+  if(state.faction==='mercenary'){
+    const companies=new Set();
+    for(const r of state.list)for(const a of (r.selAbilities||[]))if(MERC_COMPANY_ABILITIES.has(a.name.toUpperCase()))companies.add(a.name.toUpperCase());
+    if(companies.size>1)alerts.push(`⚠ Mercenary: ${companies.size} Company Abilities present (${[...companies].join(', ')}); only one (Brabançon, Flemish OR Gascon) may be chosen per Retinue`);
+    // Capitano consistency: if its Command Group takes the Company Ability, the Capitano must too
+    const capitano=state.list.find(r=>/capitano/i.test(r.unit||''));
+    if(capitano&&capitano.commandGroupRowId){
+      const cg=state.list.find(r=>r.id===capitano.commandGroupRowId);
+      const cgCo=cg&&(cg.selAbilities||[]).find(a=>MERC_COMPANY_ABILITIES.has(a.name.toUpperCase()));
+      const capCo=(capitano.selAbilities||[]).find(a=>MERC_COMPANY_ABILITIES.has(a.name.toUpperCase()));
+      if(cgCo&&!capCo)alerts.push(`⚠ Mercenary: Capitano's Command Group has ${esc(cgCo.name)} — the Capitano must also take this Company Ability`);
+    }
+    // Mercenary Lord's Command Group must be Knights only
+    const mercLord=state.list.find(r=>/^mercenary (mounted )?lord$/i.test(r.unit||''));
+    if(mercLord&&mercLord.commandGroupRowId){
+      const cg=state.list.find(r=>r.id===mercLord.commandGroupRowId);
+      if(cg&&!/knight/i.test(cg.unit||''))alerts.push(`⚠ Mercenary Lord's Command Group must be Knights (currently: ${esc(cg.unit)})`);
+    }
+  }
+
+  if(state.faction==='outlaw')infos.push('ℹ Outlaw: Allied Retinues only — Leader may never be Liege Lord');
+
+  // Marcher: ≤1/3 of points may be spent on Welsh Groups (excluding Commanders) — informational since Welsh allies are cross-list
+  const hasMarcher=state.list.some(r=>(r.selAbilities||[]).some(a=>a.name.toUpperCase()==='MARCHER'));
+  if(hasMarcher)infos.push('ℹ Marcher: up to ⅓ of Retinue points may be spent on Welsh Groups (excluding Commanders)');
+
+  // Mandatory leader notices
+  const leaderUnits=new Set();
+  for(const r of state.list)if(MANDATORY_LEADER_NAMES.has(r.unit))leaderUnits.add(r.unit);
+  for(const name of leaderUnits)infos.push(`ℹ ${esc(name)} must be designated as the Retinue Leader`);
+
+  // ── RENDER ──────────────────────────────────────────────
   if(!alerts.length&&!infos.length){bar.innerHTML='';bar.className='alert-bar';return;}
   bar.className='alert-bar '+(alerts.length?'error':'info');
-  bar.innerHTML=`<div class="alert-title">${alerts.length?'⚠ List Issues':'ℹ Notes'}</div>${[...alerts,...infos].map(a=>`<div>${esc(a)}</div>`).join('')}`;
+  bar.innerHTML=`<div class="alert-title">${alerts.length?`⚠ List Issues (${alerts.length})`:'ℹ Notes'}</div>${[...alerts,...infos].map(a=>`<div>${a}</div>`).join('')}`;
 }
 
 // ═══════════════════════════════════════════════════════════
