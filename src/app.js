@@ -552,25 +552,23 @@ function renderRetinueFactionHdr(){
     const badge=multi?`<span class="ret-badge ${role}">${role==='liege'?'Liege':'Ally'}</span>`:'';
     const liegeBtn=multi&&role==='ally'?`<button class="ret-group-liege" title="Promote this retinue to Liege" onclick="uiSetLiege('${fid}')">★ Make Liege</button>`:'';
     return `<div class="faction-hdr">
-      <div class="faction-hdr-top">
-        <div class="faction-hdr-main">
-          <div class="faction-hdr-name">⚜ ${esc(f?.faction_name||fid)} ${badge}</div>
-          <div class="faction-hdr-sub">${sub} pts</div>
+      <div class="faction-hdr-body">
+        <div class="faction-hdr-name">⚜ ${esc(f?.faction_name||fid)} ${badge}</div>
+        <div class="faction-hdr-sub">${sub} pts</div>
+        <div class="faction-hdr-traits">
+          ${traits.map(t=>`<div class="trait-tooltip-wrap">
+            <span class="faction-trait-tag">${esc(t.trait)}</span>
+            <div class="trait-tooltip">${esc(t.description||'')}</div>
+          </div>`).join('')}
         </div>
-        <div class="faction-hdr-actions">
-          <button class="ret-group-add" onclick="openSBUnitModal('${fid}')">+ Units</button>
-          <button class="ret-group-add" onclick="openSBCharModal('${fid}')">+ Characters</button>
-          ${liegeBtn}
-        </div>
+        ${f?.restriction_notes?`<div class="faction-hdr-note">${esc(f.restriction_notes)}</div>`:''}
+        ${f?.green_min_pct?`<div class="faction-hdr-note">Min. ${f.green_min_pct}% points on Green troops.${f.rabble_min_pct?` Min. ${f.rabble_min_pct}% on Rabble.`:''}</div>`:''}
       </div>
-      <div class="faction-hdr-traits">
-        ${traits.map(t=>`<div class="trait-tooltip-wrap">
-          <span class="faction-trait-tag">${esc(t.trait)}</span>
-          <div class="trait-tooltip">${esc(t.description||'')}</div>
-        </div>`).join('')}
+      <div class="faction-hdr-actions">
+        <button class="ret-group-add" onclick="openSBUnitModal('${fid}')">+ Units</button>
+        <button class="ret-group-add" onclick="openSBCharModal('${fid}')">+ Characters</button>
+        ${liegeBtn}
       </div>
-      ${f?.restriction_notes?`<div class="faction-hdr-note">${esc(f.restriction_notes)}</div>`:''}
-      ${f?.green_min_pct?`<div class="faction-hdr-note">Min. ${f.green_min_pct}% points on Green troops.${f.rabble_min_pct?` Min. ${f.rabble_min_pct}% on Rabble.`:''}</div>`:''}
     </div>`;
   }).join('');
 }
