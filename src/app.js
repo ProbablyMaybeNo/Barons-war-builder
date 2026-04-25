@@ -33,6 +33,10 @@ function removeFaction(fid){
 }
 function factionRows(fid){return state.list.filter(r=>r.faction_id===fid)}
 function factionPts(fid){return factionRows(fid).reduce((s,r)=>s+rowTotal(r),0)}
+// First-added retinue is the Liege; others are Allies. No UI to reorder yet.
+function isCombined(){return state.factions.length>1}
+function liegeFaction(){return state.factions[0]||null}
+function factionRole(fid){return liegeFaction()===fid?'liege':'ally'}
 // Migrate legacy single-faction saves to multi-faction shape
 function migrateState(s){
   if(!s||typeof s!=='object')return s;
@@ -167,10 +171,12 @@ function renderRetinueList(){
       const f=fac(fid);
       const sub=factionPts(fid);
       const rows=factionRows(fid).length;
+      const role=factionRole(fid);
+      const badge=isCombined()?`<span class="ret-badge ${role}">${role==='liege'?'Liege':'Ally'}</span>`:'';
       return `<div class="ret-row active">
         <div class="ret-row-main">
           <div class="ret-row-name">${esc(f?.faction_name||fid)}</div>
-          <div class="ret-row-meta"><span>${rows} unit${rows===1?'':'s'}</span><span>·</span><span>${sub} pts</span></div>
+          <div class="ret-row-meta">${badge}<span>${rows} unit${rows===1?'':'s'}</span><span>·</span><span>${sub} pts</span></div>
         </div>
         <div class="ret-row-actions">
           <button class="ret-act-btn del" title="Remove retinue" onclick="uiRemoveFaction('${fid}')">✕</button>
@@ -452,8 +458,9 @@ function checkFactionLegality(fid){
     }
   }
 
+  // Marcher: if present without a Welsh ally, remind the player how to use it
   const hasMarcher=rows.some(r=>(r.selAbilities||[]).some(a=>a.name.toUpperCase()==='MARCHER'));
-  if(hasMarcher)infos.push('ℹ Marcher: up to ⅓ of Retinue points may be spent on Welsh Groups (excluding Commanders)');
+  if(hasMarcher&&!state.factions.includes('welsh'))infos.push('ℹ Marcher: add a Welsh Ally retinue to spend up to ⅓ of points on Welsh Groups (excluding Commanders)');
 
   const leaderUnits=new Set();
   for(const r of rows)if(MANDATORY_LEADER_NAMES.has(r.unit))leaderUnits.add(r.unit);
@@ -469,12 +476,26 @@ function renderAlerts(spent){
   const alerts=[],infos=[];
 
   // ── COMBINED-LIST RULES ─────────────────────────────────
-  if(spent>state.ptsCap)alerts.push(`⚠ Combined retinues over cap by ${spent-state.ptsCap} pts`);
-  // Outlaw allied-only — flagged when Outlaw is the only retinue in the list
-  if(state.factions.length===1&&state.factions[0]==='outlaw'&&state.list.length){
-    alerts.push('⚠ Outlaw Retinues may only be fielded as Allies — add another retinue to act as the Liege');
+  if(spent>state.ptsCap)alerts.push(`⚠ ${isCombined()?'Combined retinues':'Retinue'} over cap by ${spent-state.ptsCap} pts`);
+  // Outlaw can never be Liege. First-added is the Liege.
+  if(liegeFaction()==='outlaw'){
+    if(isCombined())alerts.push('⚠ Outlaw cannot be the Liege Retinue — add another retinue first, or remove the Outlaw and re-add it as an Ally');
+    else alerts.push('⚠ Outlaw Retinues may only be fielded as Allies — add a non-Outlaw retinue to act as the Liege');
   } else if(state.factions.includes('outlaw')){
-    infos.push('ℹ Outlaw: Allied only — its Leader may never be the Liege Lord');
+    infos.push('ℹ Outlaw is correctly placed as an Ally (its Leader may never be the Liege Lord)');
+  }
+  // Marcher: if Liege is Feudal European and a Commander has Marcher, allied Welsh Groups (excluding Commanders) ≤ ⅓ of total points
+  if(isCombined()&&liegeFaction()==='feudal_european'&&state.factions.includes('welsh')){
+    const liegeRows=factionRows('feudal_european');
+    const hasMarcher=liegeRows.some(r=>(r.selAbilities||[]).some(a=>a.name.toUpperCase()==='MARCHER'));
+    if(hasMarcher&&spent>0){
+      const welshAllyPts=factionRows('welsh').filter(r=>r.kind!=='commander').reduce((s,r)=>s+rowTotal(r),0);
+      const pct=(welshAllyPts/spent)*100;
+      const cap=spent/3;
+      if(welshAllyPts>cap)alerts.push(`⚠ Marcher: Welsh allied Groups ${pct.toFixed(0)}% of points (Marcher caps Welsh allies at ⅓ — limit ${Math.floor(cap)} pts, currently ${welshAllyPts})`);
+    } else if(hasMarcher){
+      infos.push('ℹ Marcher: Welsh allied Groups (excluding Commanders) capped at ⅓ of total points');
+    }
   }
 
   // ── PER-RETINUE RULES ──────────────────────────────────
@@ -497,7 +518,8 @@ function renderRetinueFactionHdr(){
   if(!hdr)return;
   if(!state.factions.length){hdr.style.display='none';hdr.innerHTML='';return;}
   hdr.style.display='block';
-  hdr.innerHTML=state.factions.map(fid=>{
+  const combinedPill=isCombined()?`<div class="combined-pill">⚭ Combined Retinue · ${state.factions.length} retinues · Liege: ${esc(facLabel(liegeFaction()))}</div>`:'';
+  hdr.innerHTML=combinedPill+state.factions.map(fid=>{
     const f=fac(fid);
     const traits=BW_DATA.faction_traits.filter(t=>t.faction_id===fid);
     return `<div class="faction-hdr">
@@ -609,6 +631,17 @@ function renderRules(){
 
   // Global rules
   html+=ruleSec('⚖ Global & Optional Rules',BW_DATA.global_rules.map(r=>`<div class="trait-card"><div class="trait-card-name">${esc(r.topic)}</div><div class="trait-card-text">${esc(r.text||'')}</div></div>`).join(''));
+
+  // Allied / Combined Retinue rules
+  const alliedRules=[
+    {topic:'Liege & Allied Retinues',text:'A combined force is built from one Liege Retinue and one or more Allied Retinues. The Liege Retinue Leader is the overall commander of the force. Each Retinue is built independently using its own list, then the totals are added together against the agreed points cap.'},
+    {topic:'Per-Retinue Restrictions Still Apply',text:'Every Retinue in a combined force must satisfy its own restrictions: the 50% Commanders + Command Groups cap, minimum Group sizes (4 infantry / 2 cavalry), at least one Commander, faction-specific minimums (Green%, Rabble%), and "may only be chosen once per Retinue" abilities (e.g. Ettrick Archers, Penteulu, Mercenary Company Abilities).'},
+    {topic:'Outlaw Retinues',text:'An Outlaw Retinue may only ever be fielded as an Allied Retinue. The Outlaw Retinue Leader can never be the Liege Lord. In this builder, the first retinue you add becomes the Liege — add a non-Outlaw retinue first, then add Outlaw as an Ally.'},
+    {topic:'Mandatory Liege Leaders',text:'Some named characters must be the Retinue Leader of their Retinue when included: King John (Feudal European or Poitevin), King Alexander II (Medieval Scottish or Feudal European), Robin Hood (Outlaw), King Philip II of France, Prince Louis of France, and the Welsh King.'},
+    {topic:'Marcher (Feudal European)',text:'If the Liege Retinue is Feudal European and the Retinue Leader purchases the Marcher Ability, you may spend up to one third of the total combined points on Groups (but NOT Commanders) chosen from the Welsh list. Welsh Groups use the Liege Leader\'s Morale and Command Actions, with a -1 penalty to Order checks when using his Command Actions.'},
+    {topic:'Cross-Retinue Command',text:'A Commander may only issue Command Actions to and use the Command Group rules with units from his own Retinue, except where a faction-specific Ability (such as Marcher) explicitly grants cross-Retinue authority.'},
+  ];
+  html+=ruleSec('⚭ Allied / Combined Retinue Rules',alliedRules.map(r=>`<div class="trait-card"><div class="trait-card-name">${esc(r.topic)}</div><div class="trait-card-text">${esc(r.text)}</div></div>`).join(''));
 
   // Purchasable abilities reference
   html+=ruleSec('✦ Universal Abilities',BW_DATA.purchasable.map((a,i)=>abiRefItem(a.name,a.cost,a.effect,'gen-'+i)).join(''));
@@ -1099,7 +1132,9 @@ function renderRetinue(){
     const wars=rows.filter(r=>r.kind!=='commander');
     if(multi){
       const sub=factionPts(fid);
-      h+=`<div class="ret-group-hdr"><span class="ret-group-name">⚜ ${esc(facLabel(fid))}</span><span class="ret-group-sub">${sub} pts</span></div>`;
+      const role=factionRole(fid);
+      const badge=`<span class="ret-badge ${role}">${role==='liege'?'Liege':'Ally'}</span>`;
+      h+=`<div class="ret-group-hdr"><span class="ret-group-name">⚜ ${esc(facLabel(fid))} ${badge}</span><span class="ret-group-sub">${sub} pts</span></div>`;
     }
     if(cmds.length){
       h+=`<div class="sec-hdr"><div class="sec-hdr-line"></div><span class="sec-hdr-lbl">Commanders</span><span class="sec-hdr-ct">${cmds.length}</span><div class="sec-hdr-line"></div></div>`;

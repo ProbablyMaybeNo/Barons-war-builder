@@ -66,7 +66,7 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--bg);color
 .sb-add-row{padding:8px 10px}
 .sb-add-btn{width:100%;background:var(--card);border:1px dashed var(--border2);color:var(--text);font-family:'Cinzel',serif;font-size:.74rem;letter-spacing:.06em;padding:7px 10px;border-radius:4px;cursor:pointer;text-transform:uppercase}
 .sb-add-btn:hover{border-color:var(--blue);background:rgba(255,59,48,.08)}
-.sb-add-btn.open{border-style:solid;border-color:var(--blue);color:var(--amber2)}
+.sb-add-btn.open{border-style:solid;border-color:var(--blue);color:#000;background:var(--amber2)}
 .sb-faction-picker{padding:0 10px 10px;display:flex;flex-direction:column;gap:3px}
 .sb-faction-picker-hd{font-size:.66rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:4px 0 2px}
 .sb-faction-picker .faction-btn{border:1px solid var(--border2);border-radius:3px;padding:6px 10px;font-size:.86rem}
@@ -440,6 +440,7 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--bg);color
 .ret-group-hdr:first-child{margin-top:4px}
 .ret-group-name{font-family:'Cinzel',serif;font-size:.86rem;color:var(--amber2);letter-spacing:.06em}
 .ret-group-sub{font-family:'Cinzel',serif;font-size:.74rem;color:var(--text3)}
+.combined-pill{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(255,213,74,.14) 0%,rgba(255,59,48,.14) 100%);border:1px solid var(--amber2);color:var(--amber2);font-family:'Cinzel',serif;font-size:.78rem;letter-spacing:.06em;padding:6px 14px;border-radius:3px;margin-bottom:10px;text-transform:uppercase}
 
 @media (max-width: 900px){
   html,body{height:auto;min-height:100%}
