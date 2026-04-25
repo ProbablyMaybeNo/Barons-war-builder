@@ -63,6 +63,8 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--bg);color
 .ret-act-btn{background:transparent;border:1px solid var(--border2);color:var(--text3);font-size:.62rem;padding:2px 5px;border-radius:2px;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:.05em;text-transform:uppercase}
 .ret-act-btn:hover{border-color:var(--blue);color:var(--amber2)}
 .ret-act-btn.del:hover{border-color:var(--red);color:var(--red)}
+.ret-act-btn.liege{color:var(--amber2);border-color:var(--amber2)}
+.ret-act-btn.liege:hover{background:var(--amber2);color:#000;border-color:var(--amber2)}
 .sb-add-row{padding:8px 10px}
 .sb-add-btn{width:100%;background:var(--card);border:1px dashed var(--border2);color:var(--text);font-family:'Cinzel',serif;font-size:.74rem;letter-spacing:.06em;padding:7px 10px;border-radius:4px;cursor:pointer;text-transform:uppercase}
 .sb-add-btn:hover{border-color:var(--blue);background:rgba(255,59,48,.08)}
@@ -71,6 +73,20 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--bg);color
 .sb-faction-picker-hd{font-size:.66rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:4px 0 2px}
 .sb-faction-picker .faction-btn{border:1px solid var(--border2);border-radius:3px;padding:6px 10px;font-size:.86rem}
 .sb-empty{padding:8px 12px;font-size:.78rem;color:var(--text3);font-style:italic}
+
+/* Sidebar issues mirror */
+.sb-issues{margin-top:8px;border-radius:4px;border:1px solid var(--border2);overflow:hidden}
+.sb-issues.error{border-color:var(--red);background:rgba(255,75,67,.08)}
+.sb-issues.info{border-color:var(--amber2);background:rgba(255,213,74,.06)}
+.sb-issues.ok{border-color:var(--green);background:rgba(34,197,94,.08)}
+.sb-issues-hd{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border2);font-weight:600}
+.sb-issues.error .sb-issues-hd{color:var(--red);background:rgba(255,75,67,.06)}
+.sb-issues.info .sb-issues-hd{color:var(--amber2);background:rgba(255,213,74,.05)}
+.sb-issues.ok .sb-issues-hd{color:var(--green);border-bottom:none}
+.sb-issues-body{max-height:280px;overflow-y:auto;padding:6px 8px;display:flex;flex-direction:column;gap:5px}
+.sb-issues-item{font-size:.73rem;line-height:1.32;color:var(--text);padding:4px 6px;background:var(--bg);border:1px solid var(--border);border-radius:2px}
+.sb-issues.error .sb-issues-item{border-left:2px solid var(--red)}
+.sb-issues.info .sb-issues-item{border-left:2px solid var(--amber2)}
 
 /* ── LIST BUILDER SIDEBAR SECTION ── */
 .sb-lb{padding:10px 10px}

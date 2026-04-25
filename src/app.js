@@ -37,6 +37,11 @@ function factionPts(fid){return factionRows(fid).reduce((s,r)=>s+rowTotal(r),0)}
 function isCombined(){return state.factions.length>1}
 function liegeFaction(){return state.factions[0]||null}
 function factionRole(fid){return liegeFaction()===fid?'liege':'ally'}
+// Promote a faction to Liege by moving it to the front of state.factions
+function setLiegeFaction(fid){
+  if(!state.factions.includes(fid))return;
+  state.factions=[fid,...state.factions.filter(f=>f!==fid)];
+}
 // Migrate legacy single-faction saves to multi-faction shape
 function migrateState(s){
   if(!s||typeof s!=='object')return s;
@@ -173,12 +178,14 @@ function renderRetinueList(){
       const rows=factionRows(fid).length;
       const role=factionRole(fid);
       const badge=isCombined()?`<span class="ret-badge ${role}">${role==='liege'?'Liege':'Ally'}</span>`:'';
+      const liegeBtn=isCombined()&&role==='ally'?`<button class="ret-act-btn liege" title="Promote to Liege" onclick="uiSetLiege('${fid}')">★ Liege</button>`:'';
       return `<div class="ret-row active">
         <div class="ret-row-main">
           <div class="ret-row-name">${esc(f?.faction_name||fid)}</div>
           <div class="ret-row-meta">${badge}<span>${rows} unit${rows===1?'':'s'}</span><span>·</span><span>${sub} pts</span></div>
         </div>
         <div class="ret-row-actions">
+          ${liegeBtn}
           <button class="ret-act-btn del" title="Remove retinue" onclick="uiRemoveFaction('${fid}')">✕</button>
         </div>
       </div>`;
@@ -220,6 +227,11 @@ function uiRemoveFaction(fid){
   const msg=rows?`Remove ${f?.faction_name||fid} and its ${rows} unit row${rows===1?'':'s'}?`:`Remove ${f?.faction_name||fid}?`;
   if(!confirm(msg))return;
   removeFaction(fid);
+  refreshAll();
+}
+
+function uiSetLiege(fid){
+  setLiegeFaction(fid);
   refreshAll();
 }
 
@@ -469,22 +481,19 @@ function checkFactionLegality(fid){
   return{alerts,infos};
 }
 
-function renderAlerts(spent){
-  const bar=document.getElementById('retinueAlertBar');
-  if(!bar)return;
-  if(!state.factions.length||!state.list.length){bar.innerHTML='';return;}
+// Collect all alerts/infos for the current state. Pure function over state.
+function collectAlerts(spent){
   const alerts=[],infos=[];
+  if(!state.factions.length||!state.list.length)return{alerts,infos};
 
   // ── COMBINED-LIST RULES ─────────────────────────────────
   if(spent>state.ptsCap)alerts.push(`⚠ ${isCombined()?'Combined retinues':'Retinue'} over cap by ${spent-state.ptsCap} pts`);
-  // Outlaw can never be Liege. First-added is the Liege.
   if(liegeFaction()==='outlaw'){
-    if(isCombined())alerts.push('⚠ Outlaw cannot be the Liege Retinue — add another retinue first, or remove the Outlaw and re-add it as an Ally');
+    if(isCombined())alerts.push('⚠ Outlaw cannot be the Liege Retinue — promote another retinue with the ★ Liege button, or remove and re-add Outlaw as an Ally');
     else alerts.push('⚠ Outlaw Retinues may only be fielded as Allies — add a non-Outlaw retinue to act as the Liege');
   } else if(state.factions.includes('outlaw')){
     infos.push('ℹ Outlaw is correctly placed as an Ally (its Leader may never be the Liege Lord)');
   }
-  // Marcher: if Liege is Feudal European and a Commander has Marcher, allied Welsh Groups (excluding Commanders) ≤ ⅓ of total points
   if(isCombined()&&liegeFaction()==='feudal_european'&&state.factions.includes('welsh')){
     const liegeRows=factionRows('feudal_european');
     const hasMarcher=liegeRows.some(r=>(r.selAbilities||[]).some(a=>a.name.toUpperCase()==='MARCHER'));
@@ -503,10 +512,38 @@ function renderAlerts(spent){
     const{alerts:a,infos:i}=checkFactionLegality(fid);
     alerts.push(...a);infos.push(...i);
   }
+  return{alerts,infos};
+}
 
-  if(!alerts.length&&!infos.length){bar.innerHTML='';bar.className='alert-bar';return;}
-  bar.className='alert-bar '+(alerts.length?'error':'info');
-  bar.innerHTML=`<div class="alert-title">${alerts.length?`⚠ List Issues (${alerts.length})`:'ℹ Notes'}</div>${[...alerts,...infos].map(a=>`<div>${a}</div>`).join('')}`;
+function renderAlerts(spent){
+  const bar=document.getElementById('retinueAlertBar');
+  const{alerts,infos}=collectAlerts(spent);
+  if(bar){
+    if(!state.factions.length||!state.list.length||(!alerts.length&&!infos.length)){
+      bar.innerHTML='';bar.className='alert-bar';
+    } else {
+      bar.className='alert-bar '+(alerts.length?'error':'info');
+      bar.innerHTML=`<div class="alert-title">${alerts.length?`⚠ List Issues (${alerts.length})`:'ℹ Notes'}</div>${[...alerts,...infos].map(a=>`<div>${a}</div>`).join('')}`;
+    }
+  }
+  renderSidebarIssues(alerts,infos);
+}
+
+// Mirror of the alert bar in the sidebar, under the List Builder buttons
+function renderSidebarIssues(alerts,infos){
+  const box=document.getElementById('sidebarIssues');
+  if(!box)return;
+  if(!state.factions.length||!state.list.length){box.innerHTML='';box.style.display='none';return;}
+  if(!alerts.length&&!infos.length){
+    box.style.display='block';
+    box.className='sb-issues ok';
+    box.innerHTML=`<div class="sb-issues-hd">✓ List Legal</div>`;
+    return;
+  }
+  box.style.display='block';
+  box.className='sb-issues '+(alerts.length?'error':'info');
+  const items=[...alerts,...infos].map(a=>`<div class="sb-issues-item">${a}</div>`).join('');
+  box.innerHTML=`<div class="sb-issues-hd">${alerts.length?`⚠ List Issues (${alerts.length})`:'ℹ Notes'}</div><div class="sb-issues-body">${items}</div>`;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1224,6 +1261,7 @@ Object.assign(window, {
   doDelete,
   uiAddFaction,
   uiRemoveFaction,
+  uiSetLiege,
   toggleAddRetinue,
   openSBUnitModal,
   openSBCharModal,
