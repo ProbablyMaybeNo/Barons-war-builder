@@ -1,5 +1,11 @@
 ﻿import { BW_DATA, EQUIP, CG_UPGRADES } from '../data/game-data.js';
 
+// Lite mode hides rules text (ability descriptions, faction trait tooltips, inherent ability details).
+// Activated by serving from /lite/, by ?mode=lite on the script URL, or by <body class="lite-mode">.
+const LITE_MODE = (typeof location !== 'undefined' && location.pathname.split('/').includes('lite'))
+  || (typeof import.meta !== 'undefined' && new URL(import.meta.url).searchParams.get('mode') === 'lite')
+  || (typeof document !== 'undefined' && document.body?.classList.contains('lite-mode'));
+
 // ═══════════════════════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════
@@ -556,13 +562,15 @@ function renderRetinueFactionHdr(){
         <div class="faction-hdr-name">⚜ ${esc(f?.faction_name||fid)} ${badge}</div>
         <div class="faction-hdr-sub">${sub} pts</div>
         <div class="faction-hdr-traits">
-          ${traits.map(t=>`<div class="trait-tooltip-wrap">
-            <span class="faction-trait-tag">${esc(t.trait)}</span>
-            <div class="trait-tooltip">${esc(t.description||'')}</div>
-          </div>`).join('')}
+          ${traits.map(t=>LITE_MODE
+            ? `<span class="faction-trait-tag">${esc(t.trait)}</span>`
+            : `<div class="trait-tooltip-wrap">
+                <span class="faction-trait-tag">${esc(t.trait)}</span>
+                <div class="trait-tooltip">${esc(t.description||'')}</div>
+              </div>`).join('')}
         </div>
-        ${f?.restriction_notes?`<div class="faction-hdr-note">${esc(f.restriction_notes)}</div>`:''}
-        ${f?.green_min_pct?`<div class="faction-hdr-note">Min. ${f.green_min_pct}% points on Green troops.${f.rabble_min_pct?` Min. ${f.rabble_min_pct}% on Rabble.`:''}</div>`:''}
+        ${!LITE_MODE&&f?.restriction_notes?`<div class="faction-hdr-note">${esc(f.restriction_notes)}</div>`:''}
+        ${!LITE_MODE&&f?.green_min_pct?`<div class="faction-hdr-note">Min. ${f.green_min_pct}% points on Green troops.${f.rabble_min_pct?` Min. ${f.rabble_min_pct}% on Rabble.`:''}</div>`:''}
       </div>
       <div class="faction-hdr-actions">
         <button class="ret-group-add" onclick="openSBUnitModal('${fid}')">+ Units</button>
@@ -579,6 +587,7 @@ function renderRetinueFactionHdr(){
 
 function renderBrowse(){
   const container=document.getElementById('browseGrid');
+  if(!container)return;
   const search=(document.getElementById('browseSearch')?.value||'').toLowerCase();
   const factionFilter=document.getElementById('browseFactionFilter')?.value||'';
   const kind=document.getElementById('browseKindFilter')?.value||'';
@@ -610,6 +619,7 @@ function renderBrowse(){
 
 function renderCharsBrowse(){
   const container=document.getElementById('charsBrowseList');
+  if(!container)return;
   const search=(document.getElementById('charsBrowseSearch')?.value||'').toLowerCase();
   const fid=document.getElementById('charsFactionFilter')?.value||'';
   let displayed=fid?BW_DATA.dramatis.filter(d=>(d.retinues||'').toLowerCase().includes(facLabel(fid).toLowerCase().split(' ')[0])):BW_DATA.dramatis;
@@ -649,6 +659,7 @@ function setRulesFilter(fid){
 
 function renderRules(){
   const panel=document.getElementById('rulesPanel');
+  if(!panel)return;
   let html='<div class="rules-sections">';
 
   // ── SYSTEM-WIDE RULES (always visible) ─────────────────
@@ -983,8 +994,8 @@ function renderUB(){
         const cg=getCommandUpgrade(u);
         const ck=(_ub.selCGUpgrades||[]).includes(u);
         const pts=cg.cost>0?`+${cg.cost} pts`:'core bk';
-        return `<label class="ub-cg-pill ${ck?'ck':''}"
-          data-tkey="${regTip(esc(u),'',cg.effect||'')}" onmouseenter="showTipKey(this.dataset.tkey)" onmouseleave="clearTip()">
+        const tipAttrs=LITE_MODE?'':`data-tkey="${regTip(esc(u),'',cg.effect||'')}" onmouseenter="showTipKey(this.dataset.tkey)" onmouseleave="clearTip()"`;
+        return `<label class="ub-cg-pill ${ck?'ck':''}" ${tipAttrs}>
           <input type="checkbox" ${ck?'checked':''} onchange="ubTogCG('${esc(u)}',this.checked)">
           ${esc(u)} <span class="ub-cg-p">(${pts})</span></label>`;
       }).join('')}
@@ -1010,7 +1021,7 @@ function renderUB(){
     <span style="font-size:.7rem;color:var(--text3)">▾</span>
   </button>
   <div class="ub-abi-body" id="ubAbiBody">
-    ${inhDetails.length?`<div class="ub-abi-sub">Inherent Abilities</div>
+    ${!LITE_MODE&&inhDetails.length?`<div class="ub-abi-sub">Inherent Abilities</div>
       <div class="ub-inh-list">
         ${inhDetails.map(d=>`<div class="ub-inh-item"><div class="ub-inh-item-name">${esc(d.name)}</div>${d.effect?`<div class="ub-inh-item-effect">${esc(d.effect)}</div>`:`<div class="ub-inh-item-effect ub-inh-item-effect-empty">Faction trait — see Rules tab.</div>`}</div>`).join('')}
       </div>`:''}
@@ -1021,10 +1032,10 @@ function renderUB(){
         const ck=selN.has(a.name);
         const cmdOnly=COMMANDER_ONLY_ABIS.has(a.name.toUpperCase());
         const dis=(isC&&!ck&&atLim)||(cmdOnly&&!isC);
-        const tk=regTip(esc(a.name),'',a.effect||'');
+        const tk=LITE_MODE?'':regTip(esc(a.name),'',a.effect||'');
+        const tipAttrs=LITE_MODE?'':`data-tkey="${tk}" onmouseenter="showTipKey(this.dataset.tkey)" onmouseleave="clearTip()"`;
         const srcIcon=a.source==='generic'?'<span class="ub-an-src" title="Universal Ability">✦</span>':'<span class="ub-an-src ret" title="Retinue-Specific Ability">⚜</span>';
-        return `<label class="ub-abi-it ${ck?'ck':''} ${dis?'dis':''}"
-          data-tkey="${tk}" onmouseenter="showTipKey(this.dataset.tkey)" onmouseleave="clearTip()">
+        return `<label class="ub-abi-it ${ck?'ck':''} ${dis?'dis':''}" ${tipAttrs}>
           <input type="checkbox" ${ck?'checked':''} ${dis?'disabled':''} onchange="ubTogAbi('${esc(a.name)}',${a.cost||0},this.checked)">
           <span class="ub-an">${srcIcon} ${esc(a.name)}${cmdOnly?' <span class="ub-an-cmd" title="Commander only">⚔</span>':''}</span>
           <span class="ub-ac">+${a.cost||0}</span></label>`;

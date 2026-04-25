@@ -1,18 +1,18 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Barons' War — King John</title>
+<title>Barons' War List Builder — Lite</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./assets/styles/app.css">
+<link rel="stylesheet" href="../assets/styles/app.css">
 </head>
-<body>
+<body class="lite-mode">
 <div class="app">
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <div class="tb-logo">⚔ Barons' War <span>✦ King John</span></div>
+  <div class="tb-logo">⚔ Barons' War <span>✦ Lite — list builder only</span></div>
   <div class="tb-div"></div>
   <span class="tb-cap-label">Cap</span>
   <input type="number" class="tb-cap-input" id="ptsCap" value="500" min="100" max="9999" step="50">
@@ -49,8 +49,6 @@
 <div class="content">
   <div class="tabs">
     <button class="tab-btn active" data-tab="retinue">⚔ Retinue</button>
-    <button class="tab-btn" data-tab="units">☰ Units</button>
-    <button class="tab-btn" data-tab="rules">⚖ Rules</button>
   </div>
 
   <!-- RETINUE TAB -->
@@ -60,53 +58,14 @@
       <div class="rcard-grid" id="rcardGrid"></div>
       <div class="empty-state" id="emptyState">
         <h3>Your Retinue is Empty</h3>
-        <p>Select a Retinue from the sidebar to get started.</p>
-        <p class="prompt">← Then use <strong>+ Units</strong> to add warriors to your list.</p>
+        <p>Add a Retinue from the sidebar to get started, then use the <strong>+ Units</strong> and <strong>+ Characters</strong> buttons on each retinue card to build your list.</p>
+        <p class="prompt">For ability rules, faction traits and equipment effects, refer to the printed Barons' War rulebook.</p>
       </div>
       <div class="retinue-total" id="retinueTotal" style="display:none">
         <span class="rt-label">Total Points Spent</span>
         <span class="rt-pts" id="retinueTotalPts">0</span>
       </div>
     </div>
-  </div>
-
-  <!-- UNITS TAB -->
-  <div class="tab-panel" id="tab-units">
-    <div class="p-inner">
-      <div class="sub-tabs">
-        <button class="sub-tab-btn active" data-sub="browse-units">Units</button>
-        <button class="sub-tab-btn" data-sub="browse-chars">Characters</button>
-      </div>
-      <div class="sub-panel active" id="sub-browse-units">
-        <div class="browse-toolbar">
-          <input type="text" class="browse-search" id="browseSearch" placeholder="Search units…" oninput="renderBrowse()">
-          <select class="browse-filter" id="browseFactionFilter" onchange="renderBrowse()">
-            <option value="">All Retinues</option>
-          </select>
-          <select class="browse-filter" id="browseKindFilter" onchange="renderBrowse()">
-            <option value="">All</option>
-            <option value="commander">Commanders</option>
-            <option value="warrior">Warriors</option>
-          </select>
-        </div>
-        <div class="browse-grid" id="browseGrid"></div>
-      </div>
-      <div class="sub-panel" id="sub-browse-chars">
-        <div class="info-box">Historical commanders — points costs are in the printed King John supplement.</div>
-        <div class="browse-toolbar">
-          <input type="text" class="browse-search" id="charsBrowseSearch" placeholder="Search characters…" oninput="renderCharsBrowse()">
-          <select class="browse-filter" id="charsFactionFilter" onchange="renderCharsBrowse()">
-            <option value="">All Retinues</option>
-          </select>
-        </div>
-        <div id="charsBrowseList"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- RULES TAB -->
-  <div class="tab-panel" id="tab-rules">
-    <div class="p-inner" id="rulesPanel"></div>
   </div>
 
 </div><!-- /content -->
@@ -132,8 +91,7 @@
   </div>
 </div>
 
-
-<script type="module" src="./src/app.js?v=20260424j"></script>
+<script type="module" src="../src/app.js?v=20260424j&mode=lite"></script>
 
 <!-- UNIT BUILDER MODAL -->
 <div class="modal-overlay" id="ubOverlay" onclick="if(event.target===this)closeUB()">
@@ -156,9 +114,8 @@
         </div>
       </div>
     </div>
-    <div class="ub-tip" id="ubTip"><div class="ub-tip-empty">Hover an item to see its rules</div></div>
+    <div class="ub-tip" id="ubTip"><div class="ub-tip-empty">Hover equipment to see its stats</div></div>
   </div>
 </div>
 </body>
 </html>
-
