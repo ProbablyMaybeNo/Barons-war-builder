@@ -30,11 +30,15 @@
 <!-- SIDEBAR -->
 <div class="sidebar">
   <div class="sb-section">
-    <div class="sb-heading">Choose your retinue</div>
-    <div id="factionList"></div>
+    <div class="sb-heading">Retinues</div>
+    <div id="retinueList"></div>
+    <div class="sb-add-row">
+      <button class="sb-add-btn" id="sbAddRetBtn" onclick="toggleAddRetinue()">+ Add Retinue</button>
+    </div>
+    <div id="factionPicker" class="sb-faction-picker" style="display:none"></div>
   </div>
   <div class="sb-section" id="sbListBuilder" style="display:none">
-    <div class="sb-heading">List Builder</div>
+    <div class="sb-heading" id="sbLbHeading">List Builder</div>
     <div class="sb-lb">
       <!-- +Units button -->
       <button class="sb-lb-btn" id="sbUnitsBtn" onclick="openSBUnitModal()">

@@ -13,7 +13,9 @@ const COMMAND_UPGRADE_COST_OVERRIDES = {Pennant:7};
 // ═══════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════
-let state = {faction:null, list:[], ptsCap:500, nextId:1, openPanels:{}};
+// state.factions: array of selected faction_ids the player is fielding
+// Each row in state.list already carries faction_id, so grouping comes for free
+let state = {factions:[], list:[], ptsCap:500, nextId:1, openPanels:{}};
 
 // ═══════════════════════════════════════════════════════════
 // UTILS
@@ -21,6 +23,24 @@ let state = {faction:null, list:[], ptsCap:500, nextId:1, openPanels:{}};
 function esc(s){if(!s&&s!==0)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function fac(id){return BW_DATA.factions.find(f=>f.faction_id===id)}
 function facLabel(id){return FACTION_LABELS[id]||id}
+
+// ── FACTION HELPERS ──
+function hasFaction(fid){return state.factions.includes(fid)}
+function addFaction(fid){if(!hasFaction(fid))state.factions.push(fid)}
+function removeFaction(fid){
+  state.list=state.list.filter(r=>r.faction_id!==fid);
+  state.factions=state.factions.filter(f=>f!==fid);
+}
+function factionRows(fid){return state.list.filter(r=>r.faction_id===fid)}
+function factionPts(fid){return factionRows(fid).reduce((s,r)=>s+rowTotal(r),0)}
+// Migrate legacy single-faction saves to multi-faction shape
+function migrateState(s){
+  if(!s||typeof s!=='object')return s;
+  if(Array.isArray(s.factions))return s;
+  s.factions=s.faction?[s.faction]:[];
+  delete s.faction;
+  return s;
+}
 
 function isCommanderUnit(uData){
   if(!uData)return false;
@@ -137,26 +157,74 @@ function newRow(fid,unitName,tier,uData){
 // ═══════════════════════════════════════════════════════════
 // FACTION LIST & SIDEBAR
 // ═══════════════════════════════════════════════════════════
-function renderFactionList(){
-  document.getElementById('factionList').innerHTML=BW_DATA.factions.map(f=>`
-    <button class="faction-btn ${state.faction===f.faction_id?'active':''}" onclick="selectFaction('${f.faction_id}')">
-      ${esc(f.faction_name)}
-    </button>`).join('');
+function renderRetinueList(){
+  const c=document.getElementById('retinueList');
+  if(!c)return;
+  if(!state.factions.length){
+    c.innerHTML='<div class="sb-empty">No retinues yet. Add one to begin.</div>';
+  } else {
+    c.innerHTML=state.factions.map(fid=>{
+      const f=fac(fid);
+      const sub=factionPts(fid);
+      const rows=factionRows(fid).length;
+      return `<div class="ret-row active">
+        <div class="ret-row-main">
+          <div class="ret-row-name">${esc(f?.faction_name||fid)}</div>
+          <div class="ret-row-meta"><span>${rows} unit${rows===1?'':'s'}</span><span>·</span><span>${sub} pts</span></div>
+        </div>
+        <div class="ret-row-actions">
+          <button class="ret-act-btn del" title="Remove retinue" onclick="uiRemoveFaction('${fid}')">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  const lb=document.getElementById('sbListBuilder');
+  if(lb)lb.style.display=state.factions.length?'block':'none';
+  const lbHd=document.getElementById('sbLbHeading');
+  if(lbHd)lbHd.textContent='List Builder';
 }
 
-function selectFaction(fid){
-  state.faction=fid;
-  renderFactionList();
-  document.getElementById('sbListBuilder').style.display='block';
-  renderSBDropdowns();
-  renderRetinueFactionHdr();
+function renderFactionPicker(open){
+  const p=document.getElementById('factionPicker');
+  const btn=document.getElementById('sbAddRetBtn');
+  if(!p||!btn)return;
+  p.style.display=open?'flex':'none';
+  btn.classList.toggle('open',!!open);
+  btn.textContent=open?'× Cancel':'+ Add Retinue';
+  if(!open)return;
+  const available=BW_DATA.factions.filter(f=>!hasFaction(f.faction_id));
+  if(!available.length){p.innerHTML='<div class="sb-empty">All retinues already added.</div>';return;}
+  p.innerHTML=available.map(f=>`<button class="faction-btn" onclick="uiAddFaction('${f.faction_id}')">${esc(f.faction_name)}</button>`).join('');
+}
+
+function toggleAddRetinue(){
+  const p=document.getElementById('factionPicker');
+  renderFactionPicker(p?.style.display==='none');
+}
+
+function uiAddFaction(fid){
+  addFaction(fid);
+  renderFactionPicker(false);
+  refreshAll();
+}
+
+function uiRemoveFaction(fid){
+  const rows=factionRows(fid).length;
+  const f=fac(fid);
+  const msg=rows?`Remove ${f?.faction_name||fid} and its ${rows} unit row${rows===1?'':'s'}?`:`Remove ${f?.faction_name||fid}?`;
+  if(!confirm(msg))return;
+  removeFaction(fid);
+  refreshAll();
+}
+
+// Render everything that depends on faction selection
+function refreshAll(){
+  renderRetinueList();
+  renderRetinue();
   renderBrowse();
   renderCharsBrowse();
   renderRules();
-  renderRetinue();
 }
-
-function renderSBDropdowns(){/* no-op: sidebar now uses direct modal */}
 
 function getFactChars(fid){
   const label=facLabel(fid).toLowerCase().split(' ')[0].toLowerCase();
@@ -165,9 +233,20 @@ function getFactChars(fid){
   return list.map(d=>({...d,unit:d.name}));
 }
 
+// Pick which faction to add to. If only one selected, use it. Else, prompt.
+function pickAddFaction(){
+  if(!state.factions.length)return null;
+  if(state.factions.length===1)return state.factions[0];
+  const labels=state.factions.map((fid,i)=>`${i+1}. ${facLabel(fid)}`).join('\n');
+  const ans=prompt(`Add to which retinue?\n\n${labels}\n\nEnter number:`,'1');
+  if(!ans)return null;
+  const idx=parseInt(ans)-1;
+  return state.factions[idx]||null;
+}
+
 function openSBUnitModal(){
-  if(!state.faction){alert('Select a Retinue first.');return;}
-  const fid=state.faction;
+  const fid=pickAddFaction();
+  if(!fid){alert('Add a Retinue first.');return;}
   const warriors=uniqueUnits(BW_DATA.units.filter(u=>u.faction_id===fid&&!isCommanderUnit(u)));
   const first=warriors.length?warriors[0]:uniqueUnits(BW_DATA.units.filter(u=>u.faction_id===fid))[0];
   if(!first){alert('No units available for this retinue.');return;}
@@ -175,8 +254,8 @@ function openSBUnitModal(){
 }
 
 function openSBCharModal(){
-  if(!state.faction){alert('Select a Retinue first.');return;}
-  const fid=state.faction;
+  const fid=pickAddFaction();
+  if(!fid){alert('Add a Retinue first.');return;}
   const chars=getFactChars(fid);
   if(!chars.length){alert('No named characters available for this retinue.');return;}
   const d=chars[0];
@@ -275,139 +354,135 @@ function isCavalryRow(row){
   return false;
 }
 
-// Sum of points spent on Commanders plus their assigned Command Group rows
-function commanderAndCgPts(){
-  const cmds=state.list.filter(r=>r.kind==='commander');
-  const seen=new Set();
-  let total=0;
-  for(const c of cmds){
-    if(!seen.has(c.id)){total+=rowTotal(c);seen.add(c.id);}
-    if(c.commandGroupRowId){
-      const cg=state.list.find(r=>r.id===c.commandGroupRowId);
-      if(cg&&!seen.has(cg.id)){total+=rowTotal(cg);seen.add(cg.id);}
-    }
-  }
-  return total;
-}
-
 // Names mandated to be the Retinue Leader if included in the list
 const MANDATORY_LEADER_NAMES=new Set(['King John','King Alexander II','Robin Hood','King Philip II of France','Prince Louis of France','Welsh King','Mounted Welsh King']);
 // Mercenary Company Abilities (only one allowed per Mercenary Retinue)
 const MERC_COMPANY_ABILITIES=new Set(['BRABANCON','BRABANÇON','FLEMISH','GASCON']);
 
-function renderAlerts(spent){
-  const bar=document.getElementById('retinueAlertBar');
-  if(!state.faction||!state.list.length){bar.innerHTML='';return;}
-  const f=fac(state.faction);
+// Per-faction legality checks. Returns {alerts, infos} for one faction's slice of the list.
+function checkFactionLegality(fid){
   const alerts=[],infos=[];
-  const cmds=state.list.filter(r=>r.kind==='commander');
-  const warriors=state.list.filter(r=>r.kind!=='commander');
+  const f=fac(fid);
+  const rows=factionRows(fid);
+  if(!rows.length)return{alerts,infos};
+  const spent=factionPts(fid);
+  const cmds=rows.filter(r=>r.kind==='commander');
+  const warriors=rows.filter(r=>r.kind!=='commander');
+  const label=facLabel(fid);
 
-  // ── HARD LEGALITY CHECKS ─────────────────────────────────
-  if(spent>state.ptsCap)alerts.push(`⚠ Over cap by ${spent-state.ptsCap} pts`);
+  if(!cmds.length)alerts.push(`⚠ ${label}: no Commander (every Retinue needs at least one)`);
 
-  if(!cmds.length)alerts.push('⚠ No Commander in retinue (every list needs at least one Commander as Retinue Leader)');
-
-  // 50% Commanders + Command Groups cap
+  // 50% Commanders + Command Groups cap (per retinue)
   if(spent>0){
-    const cmdPts=commanderAndCgPts();
+    const seen=new Set();let cmdPts=0;
+    for(const c of cmds){
+      if(!seen.has(c.id)){cmdPts+=rowTotal(c);seen.add(c.id);}
+      if(c.commandGroupRowId){
+        const cg=rows.find(r=>r.id===c.commandGroupRowId);
+        if(cg&&!seen.has(cg.id)){cmdPts+=rowTotal(cg);seen.add(cg.id);}
+      }
+    }
     const pct=(cmdPts/spent)*100;
-    if(pct>50)alerts.push(`⚠ Commanders + Command Groups: ${pct.toFixed(0)}% of points (max 50%)`);
+    if(pct>50)alerts.push(`⚠ ${label}: Commanders + Command Groups ${pct.toFixed(0)}% of retinue (max 50%)`);
   }
 
-  // Green troop minimum (faction-aware; mercenaries exempt via green_min_pct=0)
   if(f?.green_min_pct>0){
-    const gp=state.list.filter(r=>r.tier==='Green').reduce((s,r)=>s+rowTotal(r),0);
+    const gp=rows.filter(r=>r.tier==='Green').reduce((s,r)=>s+rowTotal(r),0);
     const pct=spent>0?(gp/spent)*100:0;
-    if(pct<f.green_min_pct)alerts.push(`⚠ Green troops: ${pct.toFixed(0)}% (min ${f.green_min_pct}% — Faction trait requires Green troops in the Retinue)`);
+    if(pct<f.green_min_pct)alerts.push(`⚠ ${label}: Green troops ${pct.toFixed(0)}% (min ${f.green_min_pct}%)`);
   }
-
-  // Scottish: 20% on Rabble Groups
   if(f?.rabble_min_pct){
-    const rp=state.list.filter(r=>r.hasRabble).reduce((s,r)=>s+rowTotal(r),0);
+    const rp=rows.filter(r=>r.hasRabble).reduce((s,r)=>s+rowTotal(r),0);
     const pct=spent>0?(rp/spent)*100:0;
-    if(pct<f.rabble_min_pct)alerts.push(`⚠ Rabble Groups: ${pct.toFixed(0)}% (Horseless Classes requires ${f.rabble_min_pct}% on Groups with Rabble)`);
+    if(pct<f.rabble_min_pct)alerts.push(`⚠ ${label}: Rabble Groups ${pct.toFixed(0)}% (Horseless Classes requires ${f.rabble_min_pct}%)`);
   }
 
-  // Group sizes: min 4 infantry, 2 cavalry
   for(const r of warriors){
     const w=parseInt(r.warriors)||1;
     const cav=isCavalryRow(r);
     const min=cav?2:4;
-    if(w<min)alerts.push(`⚠ ${esc(r.unit)} ×${w}: below minimum Group size (${min} ${cav?'cavalry':'infantry'})`);
+    if(w<min)alerts.push(`⚠ ${label}: ${esc(r.unit)} ×${w} below min Group size (${min} ${cav?'cavalry':'infantry'})`);
   }
 
-  // Each Commander needs a Command Group assigned
-  for(const c of cmds){
-    if(!c.commandGroupRowId)alerts.push(`⚠ ${esc(c.unit)}: Commander has no assigned Command Group`);
-  }
+  for(const c of cmds)if(!c.commandGroupRowId)alerts.push(`⚠ ${label}: ${esc(c.unit)} has no Command Group assigned`);
 
-  // Duplicate purchasable abilities across the retinue (each may be chosen only once per Retinue)
   const purchasableNames=new Set(BW_DATA.purchasable.map(a=>a.name));
   const abilityCounts={};
-  for(const r of state.list)for(const a of (r.selAbilities||[]))abilityCounts[a.name]=(abilityCounts[a.name]||0)+1;
+  for(const r of rows)for(const a of (r.selAbilities||[]))abilityCounts[a.name]=(abilityCounts[a.name]||0)+1;
   for(const[name,count]of Object.entries(abilityCounts)){
-    if(count>1&&purchasableNames.has(name))alerts.push(`⚠ Purchasable Ability "${esc(name)}" used ${count}× (each may be chosen only once per Retinue)`);
+    if(count>1&&purchasableNames.has(name))alerts.push(`⚠ ${label}: Purchasable Ability "${esc(name)}" used ${count}× (once per Retinue)`);
   }
 
-  // Duplicate named characters
   const namedCounts={};
-  for(const r of state.list)if(r.tier==='Named')namedCounts[r.unit]=(namedCounts[r.unit]||0)+1;
+  for(const r of rows)if(r.tier==='Named')namedCounts[r.unit]=(namedCounts[r.unit]||0)+1;
   for(const[name,count]of Object.entries(namedCounts)){
-    if(count>1)alerts.push(`⚠ Named character "${esc(name)}" included ${count}× (only one of each per Retinue)`);
+    if(count>1)alerts.push(`⚠ ${label}: Named character "${esc(name)}" included ${count}× (one of each)`);
   }
 
-  // ── RETINUE-SPECIFIC RULES ──────────────────────────────
-  if(state.faction==='poitevin'){
-    const baronRows=state.list.filter(r=>/baron/i.test(r.unit||''));
-    if(baronRows.length)alerts.push('⚠ Poitevin: Barons (Tier 3 Commanders) are not allowed in this Retinue');
-    const paladins=state.list.filter(r=>/paladin/i.test(r.unit||''));
-    if(paladins.length)infos.push('ℹ Poitevin: a Paladin may not be chosen as Retinue Leader at list-build (may take command if the Leader dies)');
+  if(fid==='poitevin'){
+    const baronRows=rows.filter(r=>/baron/i.test(r.unit||''));
+    if(baronRows.length)alerts.push('⚠ Poitevin: Barons (Tier 3 Commanders) are not allowed');
+    const paladins=rows.filter(r=>/paladin/i.test(r.unit||''));
+    if(paladins.length)infos.push('ℹ Poitevin: a Paladin may not be the Retinue Leader at list-build (may take command if the Leader dies)');
   }
-
-  if(state.faction==='welsh'){
-    const penteulu=state.list.filter(r=>(r.selAbilities||[]).some(a=>a.name.toUpperCase()==='PENTEULU'));
-    if(penteulu.length>1)alerts.push(`⚠ Welsh: ${penteulu.length} Penteulu selected (max 1 per Retinue)`);
+  if(fid==='welsh'){
+    const penteulu=rows.filter(r=>(r.selAbilities||[]).some(a=>a.name.toUpperCase()==='PENTEULU'));
+    if(penteulu.length>1)alerts.push(`⚠ Welsh: ${penteulu.length} Penteulu selected (max 1)`);
     if(penteulu.length)infos.push('ℹ Welsh: a Penteulu cannot be the Retinue Leader');
   }
-
-  if(state.faction==='medieval_scottish'){
-    const ettrick=state.list.filter(r=>(r.selAbilities||[]).some(a=>a.name.toUpperCase()==='ETTRICK ARCHERS'));
-    if(ettrick.length>1)alerts.push(`⚠ Scottish: Ettrick Archers used ${ettrick.length}× (may be chosen only once per Retinue, on a Bow-equipped Group)`);
+  if(fid==='medieval_scottish'){
+    const ettrick=rows.filter(r=>(r.selAbilities||[]).some(a=>a.name.toUpperCase()==='ETTRICK ARCHERS'));
+    if(ettrick.length>1)alerts.push(`⚠ Scottish: Ettrick Archers used ${ettrick.length}× (once per Retinue)`);
   }
-
-  if(state.faction==='mercenary'){
+  if(fid==='mercenary'){
     const companies=new Set();
-    for(const r of state.list)for(const a of (r.selAbilities||[]))if(MERC_COMPANY_ABILITIES.has(a.name.toUpperCase()))companies.add(a.name.toUpperCase());
-    if(companies.size>1)alerts.push(`⚠ Mercenary: ${companies.size} Company Abilities present (${[...companies].join(', ')}); only one (Brabançon, Flemish OR Gascon) may be chosen per Retinue`);
-    // Capitano consistency: if its Command Group takes the Company Ability, the Capitano must too
-    const capitano=state.list.find(r=>/capitano/i.test(r.unit||''));
+    for(const r of rows)for(const a of (r.selAbilities||[]))if(MERC_COMPANY_ABILITIES.has(a.name.toUpperCase()))companies.add(a.name.toUpperCase());
+    if(companies.size>1)alerts.push(`⚠ Mercenary: ${companies.size} Company Abilities present (${[...companies].join(', ')}); only one allowed`);
+    const capitano=rows.find(r=>/capitano/i.test(r.unit||''));
     if(capitano&&capitano.commandGroupRowId){
-      const cg=state.list.find(r=>r.id===capitano.commandGroupRowId);
+      const cg=rows.find(r=>r.id===capitano.commandGroupRowId);
       const cgCo=cg&&(cg.selAbilities||[]).find(a=>MERC_COMPANY_ABILITIES.has(a.name.toUpperCase()));
       const capCo=(capitano.selAbilities||[]).find(a=>MERC_COMPANY_ABILITIES.has(a.name.toUpperCase()));
       if(cgCo&&!capCo)alerts.push(`⚠ Mercenary: Capitano's Command Group has ${esc(cgCo.name)} — the Capitano must also take this Company Ability`);
     }
-    // Mercenary Lord's Command Group must be Knights only
-    const mercLord=state.list.find(r=>/^mercenary (mounted )?lord$/i.test(r.unit||''));
+    const mercLord=rows.find(r=>/^mercenary (mounted )?lord$/i.test(r.unit||''));
     if(mercLord&&mercLord.commandGroupRowId){
-      const cg=state.list.find(r=>r.id===mercLord.commandGroupRowId);
+      const cg=rows.find(r=>r.id===mercLord.commandGroupRowId);
       if(cg&&!/knight/i.test(cg.unit||''))alerts.push(`⚠ Mercenary Lord's Command Group must be Knights (currently: ${esc(cg.unit)})`);
     }
   }
 
-  if(state.faction==='outlaw')infos.push('ℹ Outlaw: Allied Retinues only — Leader may never be Liege Lord');
-
-  // Marcher: ≤1/3 of points may be spent on Welsh Groups (excluding Commanders) — informational since Welsh allies are cross-list
-  const hasMarcher=state.list.some(r=>(r.selAbilities||[]).some(a=>a.name.toUpperCase()==='MARCHER'));
+  const hasMarcher=rows.some(r=>(r.selAbilities||[]).some(a=>a.name.toUpperCase()==='MARCHER'));
   if(hasMarcher)infos.push('ℹ Marcher: up to ⅓ of Retinue points may be spent on Welsh Groups (excluding Commanders)');
 
-  // Mandatory leader notices
   const leaderUnits=new Set();
-  for(const r of state.list)if(MANDATORY_LEADER_NAMES.has(r.unit))leaderUnits.add(r.unit);
+  for(const r of rows)if(MANDATORY_LEADER_NAMES.has(r.unit))leaderUnits.add(r.unit);
   for(const name of leaderUnits)infos.push(`ℹ ${esc(name)} must be designated as the Retinue Leader`);
 
-  // ── RENDER ──────────────────────────────────────────────
+  return{alerts,infos};
+}
+
+function renderAlerts(spent){
+  const bar=document.getElementById('retinueAlertBar');
+  if(!bar)return;
+  if(!state.factions.length||!state.list.length){bar.innerHTML='';return;}
+  const alerts=[],infos=[];
+
+  // ── COMBINED-LIST RULES ─────────────────────────────────
+  if(spent>state.ptsCap)alerts.push(`⚠ Combined retinues over cap by ${spent-state.ptsCap} pts`);
+  // Outlaw allied-only — flagged when Outlaw is the only retinue in the list
+  if(state.factions.length===1&&state.factions[0]==='outlaw'&&state.list.length){
+    alerts.push('⚠ Outlaw Retinues may only be fielded as Allies — add another retinue to act as the Liege');
+  } else if(state.factions.includes('outlaw')){
+    infos.push('ℹ Outlaw: Allied only — its Leader may never be the Liege Lord');
+  }
+
+  // ── PER-RETINUE RULES ──────────────────────────────────
+  for(const fid of state.factions){
+    const{alerts:a,infos:i}=checkFactionLegality(fid);
+    alerts.push(...a);infos.push(...i);
+  }
+
   if(!alerts.length&&!infos.length){bar.innerHTML='';bar.className='alert-bar';return;}
   bar.className='alert-bar '+(alerts.length?'error':'info');
   bar.innerHTML=`<div class="alert-title">${alerts.length?`⚠ List Issues (${alerts.length})`:'ℹ Notes'}</div>${[...alerts,...infos].map(a=>`<div>${a}</div>`).join('')}`;
@@ -416,15 +491,17 @@ function renderAlerts(spent){
 // ═══════════════════════════════════════════════════════════
 // FACTION HEADER
 // ═══════════════════════════════════════════════════════════
+// Render one header card per selected faction, stacked
 function renderRetinueFactionHdr(){
   const hdr=document.getElementById('retinueFactionHdr');
-  if(!state.faction){hdr.style.display='none';return;}
-  const f=fac(state.faction);
-  const traits=BW_DATA.faction_traits.filter(t=>t.faction_id===state.faction);
+  if(!hdr)return;
+  if(!state.factions.length){hdr.style.display='none';hdr.innerHTML='';return;}
   hdr.style.display='block';
-  hdr.innerHTML=`
-    <div class="faction-hdr">
-      <div class="faction-hdr-name">⚜ ${esc(f?.faction_name)}</div>
+  hdr.innerHTML=state.factions.map(fid=>{
+    const f=fac(fid);
+    const traits=BW_DATA.faction_traits.filter(t=>t.faction_id===fid);
+    return `<div class="faction-hdr">
+      <div class="faction-hdr-name">⚜ ${esc(f?.faction_name||fid)}</div>
       <div class="faction-hdr-traits">
         ${traits.map(t=>`<div class="trait-tooltip-wrap">
           <span class="faction-trait-tag">${esc(t.trait)}</span>
@@ -434,6 +511,7 @@ function renderRetinueFactionHdr(){
       ${f?.restriction_notes?`<div class="faction-hdr-note">${esc(f.restriction_notes)}</div>`:''}
       ${f?.green_min_pct?`<div class="faction-hdr-note">Min. ${f.green_min_pct}% points on Green troops.${f.rabble_min_pct?` Min. ${f.rabble_min_pct}% on Rabble.`:''}</div>`:''}
     </div>`;
+  }).join('');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -507,13 +585,18 @@ function renderRules(){
   const panel=document.getElementById('rulesPanel');
   let html='<div class="rules-sections">';
 
-  // Faction traits
-  const fid=state.faction;
-  if(fid){
-    const f=fac(fid);
-    const traits=BW_DATA.faction_traits.filter(t=>t.faction_id===fid);
-    html+=ruleSec('⚜ Faction Traits',traits.map(t=>`<div class="trait-card"><div class="trait-card-name">${esc(t.trait)}</div><div class="trait-card-text">${esc(t.description||'')}</div></div>`).join('')+
-      (f?.restriction_notes?`<div class="amber-box">${esc(f.restriction_notes)}</div>`:''));
+  // Faction traits — show selected retinues if any, otherwise all
+  const fids=state.factions.length?state.factions:BW_DATA.factions.map(f=>f.faction_id);
+  if(state.factions.length){
+    html+=ruleSec('⚜ Faction Traits',state.factions.map(fid=>{
+      const f=fac(fid);
+      const traits=BW_DATA.faction_traits.filter(t=>t.faction_id===fid);
+      return `<div style="margin-bottom:14px">
+        <div style="font-family:'Cinzel',serif;font-size:.72rem;color:var(--text2);margin-bottom:6px;letter-spacing:.06em">${esc(FACTION_LABELS[fid]||fid)}</div>
+        ${traits.map(t=>`<div class="trait-card"><div class="trait-card-name">${esc(t.trait)}</div><div class="trait-card-text">${esc(t.description||'')}</div></div>`).join('')}
+        ${f?.restriction_notes?`<div class="amber-box">${esc(f.restriction_notes)}</div>`:''}
+      </div>`;
+    }).join(''));
   } else {
     const groups={};
     for(const t of BW_DATA.faction_traits){if(!groups[t.faction_id])groups[t.faction_id]=[];groups[t.faction_id].push(t);}
@@ -530,16 +613,11 @@ function renderRules(){
   // Purchasable abilities reference
   html+=ruleSec('✦ Universal Abilities',BW_DATA.purchasable.map((a,i)=>abiRefItem(a.name,a.cost,a.effect,'gen-'+i)).join(''));
 
-  // Retinue abilities
-  if(fid){
-    const fa=BW_DATA.retinue_abilities.filter(a=>a.faction_id===fid);
-    if(fa.length)html+=ruleSec(`⚔ ${esc(FACTION_LABELS[fid]||fid)} Retinue Abilities`,fa.map((a,i)=>abiRefItem(a.ability,a.cost,a.effect,'fac-'+i)).join(''));
-  } else {
-    const groups={};
-    for(const a of BW_DATA.retinue_abilities){if(!groups[a.faction_id])groups[a.faction_id]=[];groups[a.faction_id].push(a);}
-    for(const[rfid,abils] of Object.entries(groups)){
-      html+=ruleSec(`⚔ ${esc(FACTION_LABELS[rfid]||rfid)} Abilities`,abils.map((a,i)=>abiRefItem(a.ability,a.cost,a.effect,rfid+'-'+i)).join(''));
-    }
+  // Retinue abilities — show only the selected retinues' lists if any, otherwise all
+  const factionsForAbi=state.factions.length?state.factions:BW_DATA.factions.map(f=>f.faction_id);
+  for(const rfid of factionsForAbi){
+    const fa=BW_DATA.retinue_abilities.filter(a=>a.faction_id===rfid);
+    if(fa.length)html+=ruleSec(`⚔ ${esc(FACTION_LABELS[rfid]||rfid)} Retinue Abilities`,fa.map((a,i)=>abiRefItem(a.ability,a.cost,a.effect,rfid+'-'+i)).join(''));
   }
 
   // Command upgrades
@@ -612,21 +690,23 @@ function doSave(){
   if(!name){alert('Enter a name.');return;}
   const saves=getSaved();
   const stripped=state.list.map(r=>{const c={...r};delete c.unitData;return c;});
-  saves[name]={faction:state.faction,ptsCap:state.ptsCap,list:stripped,savedAt:new Date().toLocaleString()};
+  saves[name]={schema:2,factions:[...state.factions],ptsCap:state.ptsCap,list:stripped,savedAt:new Date().toLocaleString()};
   setSaved(saves);document.getElementById('saveNameInput').value='';renderSavedList();
 }
 function doLoad(name){
-  const saves=getSaved();const s=saves[name];if(!s)return;
-  state.faction=s.faction;state.ptsCap=s.ptsCap||500;
+  const saves=getSaved();const s=migrateState(saves[name]);if(!s)return;
+  state.factions=Array.isArray(s.factions)?[...s.factions]:[];
+  state.ptsCap=s.ptsCap||500;
   state.list=(s.list||[]).map(r=>{
     const uData=BW_DATA.units.find(u=>u.faction_id===r.faction_id&&u.unit===r.unit&&u.experience_tier===r.tier)||null;
     return{...r,unitData:uData,kind:uData?(isCommanderUnit(uData)?'commander':uData.kind):r.kind,_openPanel:null};
   });
-  state.nextId=Math.max(...state.list.map(r=>r.id),0)+1;
+  // Make sure every row's faction is also in state.factions (backfill from row data)
+  for(const r of state.list)if(r.faction_id&&!state.factions.includes(r.faction_id))state.factions.push(r.faction_id);
+  state.nextId=Math.max(0,...state.list.map(r=>r.id))+1;
   document.getElementById('ptsCap').value=state.ptsCap;
-  closeSaveModal();renderFactionList();renderSBDropdowns();
-  renderRetinueFactionHdr();renderRetinue();renderBrowse();renderRules();
-  if(state.faction)document.getElementById('sbListBuilder').style.display='block';
+  closeSaveModal();
+  refreshAll();
 }
 function doDelete(name){if(!confirm(`Delete "${name}"?`))return;const s=getSaved();delete s[name];setSaved(s);renderSavedList()}
 function renderSavedList(){
@@ -646,7 +726,7 @@ function renderSavedList(){
 // INIT
 // ═══════════════════════════════════════════════════════════
 function init(){
-  renderFactionList();renderBrowse();renderRules();renderRetinue();
+  refreshAll();
   initTabs();
   document.getElementById('ptsCap').addEventListener('input',function(){state.ptsCap=parseInt(this.value)||500;updatePtsBar();});
 }
@@ -682,7 +762,7 @@ function calcStats(row){
 let _ub=null;
 
 function openUBNew(fid,unitName,tier){
-  if(!fid){fid=state.faction||'feudal_european';}
+  if(!fid){fid=state.factions[0]||'feudal_european';}
   const tiers=getUnitTiers(fid,unitName);
   const uData=tiers.find(t=>t.experience_tier===tier)||tiers.find(t=>t.experience_tier==='Regular')||tiers[0];
   if(!uData)return;
@@ -711,7 +791,7 @@ function saveUB(){
     const idx=state.list.findIndex(r=>r.id===_ub._origId);
     if(idx>-1){const r={..._ub};delete r._isNew;delete r._origId;state.list[idx]=r;}
   }
-  closeUB();switchToTab('retinue');renderRetinue();
+  closeUB();switchToTab('retinue');renderRetinue();renderRetinueList();
 }
 
 function switchToTab(tab){
@@ -1007,16 +1087,28 @@ function renderRetinue(){
     updatePtsBar();return;
   }
   if(empty)empty.style.display='none';if(total)total.style.display='flex';
-  const cmds=state.list.filter(r=>r.kind==='commander');
-  const wars=state.list.filter(r=>r.kind!=='commander');
+  // Order: selected factions first, then any orphan rows (faction not in selection)
+  const factionOrder=[...state.factions];
+  for(const r of state.list)if(r.faction_id&&!factionOrder.includes(r.faction_id))factionOrder.push(r.faction_id);
+  const multi=state.factions.length>1;
   let h='';
-  if(cmds.length){
-    h+=`<div class="sec-hdr"><div class="sec-hdr-line"></div><span class="sec-hdr-lbl">Commanders</span><span class="sec-hdr-ct">${cmds.length}</span><div class="sec-hdr-line"></div></div>`;
-    h+=cmds.map(r=>renderRow(r)).join('');
-  }
-  if(wars.length){
-    h+=`<div class="sec-hdr"><div class="sec-hdr-line"></div><span class="sec-hdr-lbl">Warriors</span><span class="sec-hdr-ct">${wars.length}</span><div class="sec-hdr-line"></div></div>`;
-    h+=wars.map(r=>renderRow(r)).join('');
+  for(const fid of factionOrder){
+    const rows=factionRows(fid);
+    if(!rows.length)continue;
+    const cmds=rows.filter(r=>r.kind==='commander');
+    const wars=rows.filter(r=>r.kind!=='commander');
+    if(multi){
+      const sub=factionPts(fid);
+      h+=`<div class="ret-group-hdr"><span class="ret-group-name">⚜ ${esc(facLabel(fid))}</span><span class="ret-group-sub">${sub} pts</span></div>`;
+    }
+    if(cmds.length){
+      h+=`<div class="sec-hdr"><div class="sec-hdr-line"></div><span class="sec-hdr-lbl">Commanders</span><span class="sec-hdr-ct">${cmds.length}</span><div class="sec-hdr-line"></div></div>`;
+      h+=cmds.map(r=>renderRow(r)).join('');
+    }
+    if(wars.length){
+      h+=`<div class="sec-hdr"><div class="sec-hdr-line"></div><span class="sec-hdr-lbl">Warriors</span><span class="sec-hdr-ct">${wars.length}</span><div class="sec-hdr-line"></div></div>`;
+      h+=wars.map(r=>renderRow(r)).join('');
+    }
   }
   grid.innerHTML=h;
   updatePtsBar();
@@ -1035,8 +1127,8 @@ function renderRow(row){
   const inhTags=inherent.map(a=>`<span class="r-tag-ai">${esc(a)}</span>`).join('');
   const abiTags=(row.selAbilities||[]).map(a=>`<span class="r-tag-a">${esc(a.name)}</span>`).join('');
   const hasTags=eqTags||cgTags||inhTags||abiTags;
-  // CG assignment
-  const cgCands=isC?state.list.filter(r=>r.id!==row.id&&r.kind!=='commander'&&cgMatch(r.unit,parsed.cgMust||parsed.cgMustFrom)):[];
+  // CG assignment — restrict candidates to the same faction as the commander
+  const cgCands=isC?state.list.filter(r=>r.id!==row.id&&r.kind!=='commander'&&r.faction_id===row.faction_id&&cgMatch(r.unit,parsed.cgMust||parsed.cgMustFrom)):[];
   const cgAssign=isC?`<div class="rrow-cg">
     <span class="rrow-cg-lbl">⚑ Group</span>
     <select class="rrow-cg-sel" onchange="assignCG(${row.id},this.value)">
@@ -1076,7 +1168,7 @@ function deleteRow(id){
   const row=state.list.find(r=>r.id===id);
   if(row?.commandGroupRowId){const w=state.list.find(r=>r.id===row.commandGroupRowId);if(w)w.commanderRowId=null;}
   state.list=state.list.filter(r=>r.id!==id);
-  renderRetinue();
+  renderRetinue();renderRetinueList();
 }
 
 function assignCG(cmdId,val){
@@ -1095,7 +1187,9 @@ Object.assign(window, {
   doSave,
   doLoad,
   doDelete,
-  selectFaction,
+  uiAddFaction,
+  uiRemoveFaction,
+  toggleAddRetinue,
   openSBUnitModal,
   openSBCharModal,
   renderBrowse,

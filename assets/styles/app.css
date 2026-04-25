@@ -49,6 +49,29 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--bg);color
 .faction-btn:hover{background:var(--card);color:var(--text)}
 .faction-btn.active{background:rgba(255,59,48,.12);border-left:3px solid var(--blue);color:var(--amber2);font-weight:500}
 
+/* ── RETINUE MANAGER ── */
+.ret-row{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;padding:8px 10px 8px 12px;border-left:3px solid transparent;cursor:pointer;transition:background .12s}
+.ret-row:hover{background:var(--card)}
+.ret-row.active{background:rgba(255,59,48,.12);border-left:3px solid var(--blue)}
+.ret-row-main{min-width:0;display:flex;flex-direction:column;gap:2px}
+.ret-row-name{font-size:.92rem;color:var(--amber2);font-weight:500;font-family:'Crimson Pro',serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ret-row-meta{display:flex;align-items:center;gap:6px;font-size:.7rem;color:var(--text3)}
+.ret-badge{font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.08em;text-transform:uppercase;padding:1px 5px;border-radius:2px;border:1px solid currentColor}
+.ret-badge.liege{color:var(--amber2);background:rgba(255,213,74,.08)}
+.ret-badge.ally{color:var(--bluelight);background:rgba(255,138,132,.06)}
+.ret-row-actions{display:flex;gap:4px}
+.ret-act-btn{background:transparent;border:1px solid var(--border2);color:var(--text3);font-size:.62rem;padding:2px 5px;border-radius:2px;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:.05em;text-transform:uppercase}
+.ret-act-btn:hover{border-color:var(--blue);color:var(--amber2)}
+.ret-act-btn.del:hover{border-color:var(--red);color:var(--red)}
+.sb-add-row{padding:8px 10px}
+.sb-add-btn{width:100%;background:var(--card);border:1px dashed var(--border2);color:var(--text);font-family:'Cinzel',serif;font-size:.74rem;letter-spacing:.06em;padding:7px 10px;border-radius:4px;cursor:pointer;text-transform:uppercase}
+.sb-add-btn:hover{border-color:var(--blue);background:rgba(255,59,48,.08)}
+.sb-add-btn.open{border-style:solid;border-color:var(--blue);color:var(--amber2)}
+.sb-faction-picker{padding:0 10px 10px;display:flex;flex-direction:column;gap:3px}
+.sb-faction-picker-hd{font-size:.66rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:4px 0 2px}
+.sb-faction-picker .faction-btn{border:1px solid var(--border2);border-radius:3px;padding:6px 10px;font-size:.86rem}
+.sb-empty{padding:8px 12px;font-size:.78rem;color:var(--text3);font-style:italic}
+
 /* ── LIST BUILDER SIDEBAR SECTION ── */
 .sb-lb{padding:10px 10px}
 .sb-lb-btn{width:100%;text-align:left;background:var(--card);border:1px solid var(--border2);color:var(--text);font-family:'Cinzel',serif;font-size:.8rem;letter-spacing:.06em;padding:9px 12px;border-radius:5px;cursor:pointer;transition:all .15s;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
@@ -413,6 +436,10 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--bg);color
 .sec-hdr-line{flex:1;height:1px;background:var(--border2)}
 .sec-hdr-lbl{font-family:'Cinzel',serif;font-size:.63rem;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
 .sec-hdr-ct{font-family:'Cinzel',serif;font-size:.62rem;color:var(--amber2);background:rgba(232,160,32,.1);padding:1px 6px;border-radius:10px}
+.ret-group-hdr{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 4px;padding:6px 10px;background:rgba(255,213,74,.06);border:1px solid var(--border2);border-radius:4px}
+.ret-group-hdr:first-child{margin-top:4px}
+.ret-group-name{font-family:'Cinzel',serif;font-size:.86rem;color:var(--amber2);letter-spacing:.06em}
+.ret-group-sub{font-family:'Cinzel',serif;font-size:.74rem;color:var(--text3)}
 
 @media (max-width: 900px){
   html,body{height:auto;min-height:100%}
