@@ -653,11 +653,6 @@ function renderRules(){
 
   html+=ruleSec('✦ Universal Abilities',BW_DATA.purchasable.map((a,i)=>abiRefItem(a.name,a.cost,a.effect,'gen-'+i)).join(''));
 
-  html+=ruleSec('⚑ Command Group Upgrades',BW_DATA.command_upgrades.map((a,i)=>{
-    const cost=COMMAND_UPGRADE_COST_OVERRIDES[a.name]??a.cost;
-    return abiRefItem(a.name,cost,a.effect,'cmd-'+i);
-  }).join(''));
-
   // Equipment reference
   const kinds=['melee','missile','armour_shield','mount'];
   const kindLabels={melee:'⚔ Melee Weapons',missile:'🏹 Ranged Weapons',armour_shield:'🛡 Armour & Shields',mount:'🐴 Mounts'};
@@ -696,11 +691,26 @@ function renderRules(){
     const f=fac(fid);
     const traits=BW_DATA.faction_traits.filter(t=>t.faction_id===fid);
     const abilities=BW_DATA.retinue_abilities.filter(a=>a.faction_id===fid);
+    // Collect Command Group upgrade names mentioned in this faction's unit profiles.
+    // Some profiles (e.g. Outlaw) store escaped \n instead of real newlines — normalize first.
+    const cgNames=new Set();
+    for(const u of BW_DATA.units.filter(u=>u.faction_id===fid)){
+      const profile=(u.full_profile||'').replace(/\\n/g,'\n');
+      const m=profile.match(/Command Group upgrades:\s*([^\n]+)/);
+      if(!m)continue;
+      m[1].split(',').flatMap(p=>p.split(/\s+OR\s+/i)).map(s=>s.trim()).filter(Boolean).forEach(n=>cgNames.add(n));
+    }
+    const cgItems=[...cgNames].map((n,i)=>{
+      const cu=BW_DATA.command_upgrades.find(c=>c.name===n)||{cost:CG_UPGRADES[n]?.cost,effect:CG_UPGRADES[n]?.effect||''};
+      const cost=COMMAND_UPGRADE_COST_OVERRIDES[n]??cu.cost;
+      return abiRefItem(n,cost,cu.effect||'',fid+'-cg-'+i);
+    }).join('');
     retBody+=`<div class="rules-retinue-block">
       <div class="rules-sub-hd">Faction Traits</div>
       ${traits.map(t=>`<div class="trait-card"><div class="trait-card-name">${esc(t.trait)}</div><div class="trait-card-text">${esc(t.description||'')}</div></div>`).join('')}
       ${f?.restriction_notes?`<div class="amber-box">${esc(f.restriction_notes)}</div>`:''}
       ${abilities.length?`<div class="rules-sub-hd">Retinue-Specific Abilities</div>${abilities.map((a,i)=>abiRefItem(a.ability,a.cost,a.effect,fid+'-'+i)).join('')}`:''}
+      ${cgItems?`<div class="rules-sub-hd">Command Group Upgrades</div>${cgItems}`:''}
     </div>`;
   } else {
     retBody+=`<div class="rules-filter-empty">Select a retinue above to see its faction traits and retinue-specific abilities.</div>`;
