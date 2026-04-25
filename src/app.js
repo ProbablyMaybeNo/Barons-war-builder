@@ -15,6 +15,12 @@ const STORAGE_KEY = 'bw_kj_v4';
 const FACTION_LABELS = {feudal_european:'Feudal European',mercenary:'Mercenary',flemish:'Flemish',poitevin:'Poitevin',medieval_scottish:'Medieval Scottish',welsh:'Welsh',outlaw:'Outlaw'};
 const TWO_HANDED = new Set(['Two Handed Weapon','Improvised Two Handed Weapon','Bill / Polearm','Dane Axe','Dual Daggers','Bill','Bill (Regulars)']);
 const COMMAND_UPGRADE_COST_OVERRIDES = {Pennant:7};
+const WEAPON_CHOICE_RANGED_OPTIONS = ['Javelin','Bow'];
+const WEAPON_CHOICE_UNIT_OVERRIDES = new Set([
+  // The source data profile does not currently mark this rule, but Galwegians
+  // can add these ranged weapons through Weapon Choice.
+  'medieval_scottish::Galwegians',
+]);
 
 // ═══════════════════════════════════════════════════════════
 // STATE
@@ -95,6 +101,37 @@ function parseProfile(profile){
 function getInherent(profile){
   const m=(profile||'').match(/Inherent Abilities: ([^\n]+)/);
   return m?m[1].split(',').map(a=>a.trim()).filter(Boolean):[];
+}
+
+function selectedAbilityEffect(row, abilityName){
+  const upper=(abilityName||'').toUpperCase();
+  const retinue=BW_DATA.retinue_abilities.find(a=>a.faction_id===row?.faction_id&&a.ability.toUpperCase()===upper);
+  const generic=BW_DATA.purchasable.find(a=>a.name.toUpperCase()===upper);
+  return retinue?.effect||generic?.effect||'';
+}
+
+function hasRangedWeaponChoice(row, inherent=getInherent(row?.unitData?.full_profile||'')){
+  const unitKey=`${row?.faction_id||''}::${row?.unit||''}`;
+  if(WEAPON_CHOICE_UNIT_OVERRIDES.has(unitKey))return true;
+  if(inherent.some(a=>/^Weapon Choices?$/i.test(a)))return true;
+  return (row?.selAbilities||[]).some(a=>
+    /^Weapon Choices?$/i.test(a.name||'') && /Ranged Weapon/i.test(selectedAbilityEffect(row,a.name))
+  );
+}
+
+function addUniqueItems(items, additions){
+  const seen=new Set(items);
+  const out=[...items];
+  for(const item of additions){
+    if(EQUIP[item]&&!seen.has(item)){out.push(item);seen.add(item);}
+  }
+  return out;
+}
+
+function getParsedEquipment(row, parsed=parseProfile(row?.unitData?.full_profile||''), inherent=getInherent(row?.unitData?.full_profile||'')){
+  const out={...parsed,weaponsMust:[...parsed.weaponsMust],weaponsMay:[...parsed.weaponsMay]};
+  if(hasRangedWeaponChoice(row,inherent))out.weaponsMay=addUniqueItems(out.weaponsMay,WEAPON_CHOICE_RANGED_OPTIONS);
+  return out;
 }
 
 function getUnitTiers(fid,unit){
@@ -919,8 +956,9 @@ function renderUB(){
     mounts:['Horse','Barded Horse','Pony'],
     cgUpgrades:[],cgMustFrom:'',notes:[]
   };
-  const parsed=isCustom?customParsed:parseProfile(_ub.unitData?.full_profile||'');
   const inherent=isCustom?[]:getInherent(_ub.unitData?.full_profile||'');
+  const parsed=isCustom?customParsed:getParsedEquipment(_ub,parseProfile(_ub.unitData?.full_profile||''),inherent);
+  if(_ub.selOptWeapon&&!parsed.weaponsMay.includes(_ub.selOptWeapon))_ub.selOptWeapon=null;
   const isC=isCustom||_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
   const isNamed=_ub.tier==='Named';
   const stats=calcStats(_ub);
@@ -980,7 +1018,10 @@ function renderUB(){
     const isTH=TWO_HANDED.has(_ub.selWeapon||'');
     const left=[];const right=[];
     if(parsed.weaponsMust.length)left.push({lbl:'Weapon',f:'selWeapon',items:parsed.weaponsMust,t:'radio'});
-    if(parsed.weaponsMay.length)left.push({lbl:parsed.weaponsMay[0]?.toLowerCase().includes('lance')?'Lance (optional)':'Optional',f:'selOptWeapon',items:parsed.weaponsMay,t:'check'});
+    if(parsed.weaponsMay.length){
+      const isLanceOnly=parsed.weaponsMay.length===1&&parsed.weaponsMay[0]?.toLowerCase().includes('lance');
+      left.push({lbl:isLanceOnly?'Lance (optional)':'Optional Weapon',f:'selOptWeapon',items:parsed.weaponsMay,t:isLanceOnly?'check':'radio-opt'});
+    }
     if(parsed.mounts.length)left.push({lbl:'Mounts',f:'selMount',items:parsed.mounts,t:'radio'});
     if(parsed.armor.length)right.push({lbl:'Armour',f:'selArmor',items:parsed.armor,t:'radio'});
     if(parsed.shields.length)right.push({lbl:'Shields',f:'selShield',items:parsed.shields,t:'radio-opt',blocked:isTH});
@@ -1193,11 +1234,13 @@ function ubTogCG(name,ck){
 
 function ubTogAbi(name,cost,ck){
   if(!_ub.selAbilities)_ub.selAbilities=[];
+  const changesWeaponChoices=/^Weapon Choices?$/i.test(name);
   const isC=_ub._isCustom||_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
   if(COMMANDER_ONLY_ABIS.has(name.toUpperCase())&&!isC)return; // warriors can't take commander-only
   const lim=_ub._isCustom?(parseInt(_ub.customRank)||2):(isC?getAbilityLimit(_ub.unit):999);
   if(ck){if(isC&&_ub.selAbilities.length>=lim)return;if(!_ub.selAbilities.find(a=>a.name===name))_ub.selAbilities.push({name,cost});}
   else _ub.selAbilities=_ub.selAbilities.filter(a=>a.name!==name);
+  if(changesWeaponChoices){renderUB();return;}
   const selN=new Set(_ub.selAbilities.map(a=>a.name));
   const atLim=_ub.selAbilities.length>=lim;
   document.querySelectorAll('#ubAbiBody .ub-abi-it').forEach(it=>{
@@ -1397,4 +1440,3 @@ Object.assign(window, {
   deleteRow,
   assignCG
 });
-
