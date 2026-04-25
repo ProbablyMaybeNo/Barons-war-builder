@@ -69,16 +69,16 @@ function getAbilityLimit(unitName){
   const n=(unitName||'').toLowerCase();
   // Tier 3: Barons, Kings — 3 abilities
   if(n.includes('baron')||n.includes('king'))return 3;
-  // Tier 1: Capitano, Burgemeester — 1 ability
-  if(n.includes('capitano')||n.includes('burgemeester'))return 1;
-  // Tier 2: Lords, Serjeants at Arms, Paladins, Gaelic Lords, etc — 2 abilities
+  // All other commanders (Lord, Capitano, Burgemeester, Paladin, Serjeant at Arms, Gaelic Lord…) — 2 abilities
   return 2;
 }
 
 function parseProfile(profile){
   const res={weaponsMust:[],weaponsMay:[],armor:[],shields:[],mounts:[],cgUpgrades:[],cgMustFrom:'',notes:[]};
   if(!profile)return res;
-  for(const rawLine of profile.split('\n')){
+  // Some entries (Capitano, Outlaw units) store escaped \n instead of real newlines — normalise first.
+  const normalised=profile.replace(/\\n/g,'\n');
+  for(const rawLine of normalised.split('\n')){
     const line=rawLine.trim();
     const strip=s=>s.split(',').map(w=>w.trim().split(' - ')[0].replace(/\*$/,'').replace(/\s*\([^)]*\)/g,'').trim()).filter(Boolean);
     if(line.startsWith('Weapon, Must'))res.weaponsMust=strip(line.replace(/^Weapon, Must choose one:\s*/,''));
@@ -94,7 +94,8 @@ function parseProfile(profile){
 }
 
 function getInherent(profile){
-  const m=(profile||'').match(/Inherent Abilities: ([^\n]+)/);
+  const normalised=(profile||'').replace(/\\n/g,'\n');
+  const m=normalised.match(/Inherent Abilities: ([^\n]+)/);
   return m?m[1].split(',').map(a=>a.trim()).filter(Boolean):[];
 }
 
@@ -442,9 +443,10 @@ function checkFactionLegality(fid){
     if(pct<f.green_min_pct)alerts.push(`⚠ ${label}: Green troops ${pct.toFixed(0)}% (min ${f.green_min_pct}%)`);
   }
   if(f?.rabble_min_pct){
-    const rp=rows.filter(r=>r.hasRabble).reduce((s,r)=>s+rowTotal(r),0);
+    // Per supplement: only Green or Irregular rabble-flagged groups count
+    const rp=rows.filter(r=>r.hasRabble&&(r.tier==='Green'||r.tier==='Irregular')).reduce((s,r)=>s+rowTotal(r),0);
     const pct=spent>0?(rp/spent)*100:0;
-    if(pct<f.rabble_min_pct)alerts.push(`⚠ ${label}: Rabble Groups ${pct.toFixed(0)}% (Horseless Classes requires ${f.rabble_min_pct}%)`);
+    if(pct<f.rabble_min_pct)alerts.push(`⚠ ${label}: Rabble Groups ${pct.toFixed(0)}% (Horseless Classes requires ${f.rabble_min_pct}% on Green/Irregular Light Cavalry, Bowmen or Gaelic Levies)`);
   }
 
   for(const r of warriors){
