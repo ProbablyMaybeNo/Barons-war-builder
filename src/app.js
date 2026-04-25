@@ -176,15 +176,12 @@ function renderRetinueList(){
       const f=fac(fid);
       const sub=factionPts(fid);
       const rows=factionRows(fid).length;
-      const role=factionRole(fid);
-      const liegeBtn=isCombined()&&role==='ally'?`<button class="ret-act-btn liege" title="Promote to Liege" onclick="uiSetLiege('${fid}')">★ Make Liege</button>`:'';
       return `<div class="ret-row active">
         <div class="ret-row-main">
           <div class="ret-row-name">${esc(f?.faction_name||fid)}</div>
           <div class="ret-row-meta"><span>${rows} unit${rows===1?'':'s'}</span><span>·</span><span>${sub} pts</span></div>
         </div>
         <div class="ret-row-actions">
-          ${liegeBtn}
           <button class="ret-act-btn del" title="Remove retinue" onclick="uiRemoveFaction('${fid}')">✕</button>
         </div>
       </div>`;
@@ -630,36 +627,20 @@ function renderCharsBrowse(){
 // ═══════════════════════════════════════════════════════════
 // RULES TAB
 // ═══════════════════════════════════════════════════════════
+// Rules tab: persistent retinue filter (independent of state.factions)
+let _rulesFilterFid=null;
+function setRulesFilter(fid){
+  _rulesFilterFid=fid||null;
+  renderRules();
+}
+
 function renderRules(){
   const panel=document.getElementById('rulesPanel');
   let html='<div class="rules-sections">';
 
-  // Faction traits — show selected retinues if any, otherwise all
-  const fids=state.factions.length?state.factions:BW_DATA.factions.map(f=>f.faction_id);
-  if(state.factions.length){
-    html+=ruleSec('⚜ Faction Traits',state.factions.map(fid=>{
-      const f=fac(fid);
-      const traits=BW_DATA.faction_traits.filter(t=>t.faction_id===fid);
-      return `<div style="margin-bottom:14px">
-        <div style="font-family:'Cinzel',serif;font-size:.72rem;color:var(--text2);margin-bottom:6px;letter-spacing:.06em">${esc(FACTION_LABELS[fid]||fid)}</div>
-        ${traits.map(t=>`<div class="trait-card"><div class="trait-card-name">${esc(t.trait)}</div><div class="trait-card-text">${esc(t.description||'')}</div></div>`).join('')}
-        ${f?.restriction_notes?`<div class="amber-box">${esc(f.restriction_notes)}</div>`:''}
-      </div>`;
-    }).join(''));
-  } else {
-    const groups={};
-    for(const t of BW_DATA.faction_traits){if(!groups[t.faction_id])groups[t.faction_id]=[];groups[t.faction_id].push(t);}
-    html+=ruleSec('⚜ Faction Traits',Object.entries(groups).map(([gfid,traits])=>`
-      <div style="margin-bottom:14px">
-        <div style="font-family:'Cinzel',serif;font-size:.72rem;color:var(--text2);margin-bottom:6px;letter-spacing:.06em">${esc(FACTION_LABELS[gfid]||gfid)}</div>
-        ${traits.map(t=>`<div class="trait-card"><div class="trait-card-name">${esc(t.trait)}</div><div class="trait-card-text">${esc(t.description||'')}</div></div>`).join('')}
-      </div>`).join(''));
-  }
-
-  // Global rules
+  // ── SYSTEM-WIDE RULES (always visible) ─────────────────
   html+=ruleSec('⚖ Global & Optional Rules',BW_DATA.global_rules.map(r=>`<div class="trait-card"><div class="trait-card-name">${esc(r.topic)}</div><div class="trait-card-text">${esc(r.text||'')}</div></div>`).join(''));
 
-  // Allied / Combined Retinue rules
   const alliedRules=[
     {topic:'Liege & Allied Retinues',text:'A combined force is built from one Liege Retinue and one or more Allied Retinues. The Liege Retinue Leader is the overall commander of the force. Each Retinue is built independently using its own list, then the totals are added together against the agreed points cap.'},
     {topic:'Per-Retinue Restrictions Still Apply',text:'Every Retinue in a combined force must satisfy its own restrictions: the 50% Commanders + Command Groups cap, minimum Group sizes (4 infantry / 2 cavalry), at least one Commander, faction-specific minimums (Green%, Rabble%), and "may only be chosen once per Retinue" abilities (e.g. Ettrick Archers, Penteulu, Mercenary Company Abilities).'},
@@ -670,17 +651,8 @@ function renderRules(){
   ];
   html+=ruleSec('⚭ Allied / Combined Retinue Rules',alliedRules.map(r=>`<div class="trait-card"><div class="trait-card-name">${esc(r.topic)}</div><div class="trait-card-text">${esc(r.text)}</div></div>`).join(''));
 
-  // Purchasable abilities reference
   html+=ruleSec('✦ Universal Abilities',BW_DATA.purchasable.map((a,i)=>abiRefItem(a.name,a.cost,a.effect,'gen-'+i)).join(''));
 
-  // Retinue abilities — show only the selected retinues' lists if any, otherwise all
-  const factionsForAbi=state.factions.length?state.factions:BW_DATA.factions.map(f=>f.faction_id);
-  for(const rfid of factionsForAbi){
-    const fa=BW_DATA.retinue_abilities.filter(a=>a.faction_id===rfid);
-    if(fa.length)html+=ruleSec(`⚔ ${esc(FACTION_LABELS[rfid]||rfid)} Retinue Abilities`,fa.map((a,i)=>abiRefItem(a.ability,a.cost,a.effect,rfid+'-'+i)).join(''));
-  }
-
-  // Command upgrades
   html+=ruleSec('⚑ Command Group Upgrades',BW_DATA.command_upgrades.map((a,i)=>{
     const cost=COMMAND_UPGRADE_COST_OVERRIDES[a.name]??a.cost;
     return abiRefItem(a.name,cost,a.effect,'cmd-'+i);
@@ -709,6 +681,31 @@ function renderRules(){
           ${d.character_abilities?`<div class="cbc-abilities">${esc(d.character_abilities).replace(/•\s*/g,'\n• ')}</div>`:``}
         </div>
       </div>`).join(''));
+
+  // ── RETINUE-SPECIFIC RULES (filtered by dropdown) ─────
+  const fid=_rulesFilterFid;
+  const filterDropdown=`<div class="rules-filter-row">
+    <label class="rules-filter-lbl">Show retinue:</label>
+    <select class="rules-filter-sel" onchange="setRulesFilter(this.value)">
+      <option value="">— Select a retinue —</option>
+      ${BW_DATA.factions.map(f=>`<option value="${esc(f.faction_id)}" ${fid===f.faction_id?'selected':''}>${esc(f.faction_name)}</option>`).join('')}
+    </select>
+  </div>`;
+  let retBody=filterDropdown;
+  if(fid){
+    const f=fac(fid);
+    const traits=BW_DATA.faction_traits.filter(t=>t.faction_id===fid);
+    const abilities=BW_DATA.retinue_abilities.filter(a=>a.faction_id===fid);
+    retBody+=`<div class="rules-retinue-block">
+      <div class="rules-sub-hd">Faction Traits</div>
+      ${traits.map(t=>`<div class="trait-card"><div class="trait-card-name">${esc(t.trait)}</div><div class="trait-card-text">${esc(t.description||'')}</div></div>`).join('')}
+      ${f?.restriction_notes?`<div class="amber-box">${esc(f.restriction_notes)}</div>`:''}
+      ${abilities.length?`<div class="rules-sub-hd">Retinue-Specific Abilities</div>${abilities.map((a,i)=>abiRefItem(a.ability,a.cost,a.effect,fid+'-'+i)).join('')}`:''}
+    </div>`;
+  } else {
+    retBody+=`<div class="rules-filter-empty">Select a retinue above to see its faction traits and retinue-specific abilities.</div>`;
+  }
+  html+=ruleSec('⚜ Retinue-Specific Rules',retBody);
 
   html+='</div>';
   panel.innerHTML=html;
@@ -1161,7 +1158,8 @@ function renderRetinue(){
       const sub=factionPts(fid);
       const role=factionRole(fid);
       const badge=`<span class="ret-badge ${role}">${role==='liege'?'Liege':'Ally'}</span>`;
-      h+=`<div class="ret-group-hdr"><span class="ret-group-name">⚜ ${esc(facLabel(fid))} ${badge}</span><span class="ret-group-sub">${sub} pts</span></div>`;
+      const liegeBtn=role==='ally'?`<button class="ret-group-liege" title="Promote this retinue to Liege" onclick="uiSetLiege('${fid}')">★ Make Liege</button>`:'';
+      h+=`<div class="ret-group-hdr"><span class="ret-group-name">⚜ ${esc(facLabel(fid))} ${badge}</span><span class="ret-group-actions"><span class="ret-group-sub">${sub} pts</span>${liegeBtn}</span></div>`;
     }
     if(cmds.length){
       h+=`<div class="sec-hdr"><div class="sec-hdr-line"></div><span class="sec-hdr-lbl">Commanders</span><span class="sec-hdr-ct">${cmds.length}</span><div class="sec-hdr-line"></div></div>`;
@@ -1253,6 +1251,7 @@ Object.assign(window, {
   uiRemoveFaction,
   uiSetLiege,
   toggleAddRetinue,
+  setRulesFilter,
   openSBUnitModal,
   openSBCharModal,
   renderBrowse,
