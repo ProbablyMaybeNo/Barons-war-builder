@@ -970,23 +970,36 @@ function renderUB(){
   const selN=new Set(selA.map(a=>a.name));
   const lim=isC?getAbilityLimit(_ub.unit):0;
   const atLim=isC&&selA.length>=lim;
+  // Look up descriptions for inherent abilities (from purchasable, retinue, or CG_UPGRADES)
+  const inhDetails=inherent.map(name=>{
+    const upper=name.toUpperCase();
+    const u=BW_DATA.purchasable.find(a=>a.name.toUpperCase()===upper);
+    const r=BW_DATA.retinue_abilities.find(a=>a.ability.toUpperCase()===upper);
+    return{name,effect:u?.effect||r?.effect||''};
+  });
   h+=`<button class="ub-abi-tog" onclick="document.getElementById('ubAbiBody').classList.toggle('open')">
     <span style="font-family:'Cinzel',serif;font-size:.78rem;font-weight:700">Abilities</span>
     <div class="ub-inh-tags">${inherent.map(a=>`<span class="inh-tag">${esc(a)}</span>`).join('')}</div>
     <span style="font-size:.7rem;color:var(--text3)">▾</span>
   </button>
   <div class="ub-abi-body" id="ubAbiBody">
-    ${isC?`<div class="ub-abi-lim">Slots: <span class="${atLim?'abi-full':'abi-ok'}" id="ubAbiLim">${selA.length} / ${lim}</span></div>`:''}
+    ${inhDetails.length?`<div class="ub-abi-sub">Inherent Abilities</div>
+      <div class="ub-inh-list">
+        ${inhDetails.map(d=>`<div class="ub-inh-item"><div class="ub-inh-item-name">${esc(d.name)}</div>${d.effect?`<div class="ub-inh-item-effect">${esc(d.effect)}</div>`:`<div class="ub-inh-item-effect ub-inh-item-effect-empty">Faction trait — see Rules tab.</div>`}</div>`).join('')}
+      </div>`:''}
+    ${isC?`<div class="ub-abi-sub">Purchasable Abilities <span class="ub-abi-legend">✦ Universal &nbsp;⚜ Retinue &nbsp;⚔ Commander only</span></div>
+      <div class="ub-abi-lim">Slots: <span class="${atLim?'abi-full':'abi-ok'}" id="ubAbiLim">${selA.length} / ${lim}</span></div>`:''}
     <div class="ub-abi-grid">
       ${abils.filter(a=>isC||!COMMANDER_ONLY_ABIS.has(a.name.toUpperCase())).map(a=>{
         const ck=selN.has(a.name);
         const cmdOnly=COMMANDER_ONLY_ABIS.has(a.name.toUpperCase());
         const dis=(isC&&!ck&&atLim)||(cmdOnly&&!isC);
         const tk=regTip(esc(a.name),'',a.effect||'');
+        const srcIcon=a.source==='generic'?'<span class="ub-an-src" title="Universal Ability">✦</span>':'<span class="ub-an-src ret" title="Retinue-Specific Ability">⚜</span>';
         return `<label class="ub-abi-it ${ck?'ck':''} ${dis?'dis':''}"
           data-tkey="${tk}" onmouseenter="showTipKey(this.dataset.tkey)" onmouseleave="clearTip()">
           <input type="checkbox" ${ck?'checked':''} ${dis?'disabled':''} onchange="ubTogAbi('${esc(a.name)}',${a.cost||0},this.checked)">
-          <span class="ub-an">${esc(a.name)}${cmdOnly?' <span style="font-size:.58rem;color:var(--amber2)">⚔</span>':''}</span>
+          <span class="ub-an">${srcIcon} ${esc(a.name)}${cmdOnly?' <span class="ub-an-cmd" title="Commander only">⚔</span>':''}</span>
           <span class="ub-ac">+${a.cost||0}</span></label>`;
       }).join('')}
     </div>
