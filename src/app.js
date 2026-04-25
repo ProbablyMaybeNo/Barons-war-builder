@@ -1363,6 +1363,7 @@ function renderRow(row){
           <span class="rrow-name">${esc(row.unit)}</span>
           <span class="rrow-tier ${tcls}">${esc(row.tier)}</span>
           ${row._isCustom?`<span class="rrow-custom" title="Custom Commander (Knight Commander Generator)">★ Custom T${row.customRank||2}</span>`:''}
+          ${row.hasRabble&&(row.tier==='Green'||row.tier==='Irregular')?`<span class="rrow-rabble" title="Counts toward the Scottish 20% Rabble requirement">RABBLE</span>`:''}
           ${!isC?`<span class="rrow-count">×${parseInt(row.warriors)||1}</span>`:''}
         </div>
         ${hasTags?`<div class="rrow-tags">${eqTags}${cgTags}${inhTags}${abiTags}</div>`:''}
