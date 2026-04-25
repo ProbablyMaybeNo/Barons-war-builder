@@ -543,11 +543,26 @@ function renderRetinueFactionHdr(){
   if(!state.factions.length){hdr.style.display='none';hdr.innerHTML='';return;}
   hdr.style.display='block';
   const combinedPill=isCombined()?`<div class="combined-pill">⚭ Combined Retinue · ${state.factions.length} retinues · Liege: ${esc(facLabel(liegeFaction()))}</div>`:'';
+  const multi=isCombined();
   hdr.innerHTML=combinedPill+state.factions.map(fid=>{
     const f=fac(fid);
     const traits=BW_DATA.faction_traits.filter(t=>t.faction_id===fid);
+    const sub=factionPts(fid);
+    const role=factionRole(fid);
+    const badge=multi?`<span class="ret-badge ${role}">${role==='liege'?'Liege':'Ally'}</span>`:'';
+    const liegeBtn=multi&&role==='ally'?`<button class="ret-group-liege" title="Promote this retinue to Liege" onclick="uiSetLiege('${fid}')">★ Make Liege</button>`:'';
     return `<div class="faction-hdr">
-      <div class="faction-hdr-name">⚜ ${esc(f?.faction_name||fid)}</div>
+      <div class="faction-hdr-top">
+        <div class="faction-hdr-main">
+          <div class="faction-hdr-name">⚜ ${esc(f?.faction_name||fid)} ${badge}</div>
+          <div class="faction-hdr-sub">${sub} pts</div>
+        </div>
+        <div class="faction-hdr-actions">
+          <button class="ret-group-add" onclick="openSBUnitModal('${fid}')">+ Units</button>
+          <button class="ret-group-add" onclick="openSBCharModal('${fid}')">+ Characters</button>
+          ${liegeBtn}
+        </div>
+      </div>
       <div class="faction-hdr-traits">
         ${traits.map(t=>`<div class="trait-tooltip-wrap">
           <span class="faction-trait-tag">${esc(t.trait)}</span>
@@ -1165,23 +1180,9 @@ function renderRetinue(){
     const rows=factionRows(fid);
     const cmds=rows.filter(r=>r.kind==='commander');
     const wars=rows.filter(r=>r.kind!=='commander');
-    const sub=factionPts(fid);
-    const role=factionRole(fid);
-    const badge=multi?`<span class="ret-badge ${role}">${role==='liege'?'Liege':'Ally'}</span>`:'';
-    const liegeBtn=multi&&role==='ally'?`<button class="ret-group-liege" title="Promote this retinue to Liege" onclick="uiSetLiege('${fid}')">★ Make Liege</button>`:'';
-    h+=`<div class="ret-group-hdr">
-      <div class="ret-group-main">
-        <span class="ret-group-name">⚜ ${esc(facLabel(fid))} ${badge}</span>
-        <span class="ret-group-sub">${sub} pts</span>
-      </div>
-      <div class="ret-group-actions-col">
-        <button class="ret-group-add" onclick="openSBUnitModal('${fid}')">+ Units</button>
-        <button class="ret-group-add" onclick="openSBCharModal('${fid}')">+ Characters</button>
-        ${liegeBtn}
-      </div>
-    </div>`;
+    if(multi)h+=`<div class="ret-group-divider">⚜ ${esc(facLabel(fid))}</div>`;
     if(!rows.length){
-      h+=`<div class="ret-group-empty">No units yet — use + Units or + Characters above to add to this retinue.</div>`;
+      h+=`<div class="ret-group-empty">No units yet — use + Units or + Characters in the ${esc(facLabel(fid))} card above to add to this retinue.</div>`;
       continue;
     }
     if(cmds.length){
