@@ -177,12 +177,11 @@ function renderRetinueList(){
       const sub=factionPts(fid);
       const rows=factionRows(fid).length;
       const role=factionRole(fid);
-      const badge=isCombined()?`<span class="ret-badge ${role}">${role==='liege'?'Liege':'Ally'}</span>`:'';
-      const liegeBtn=isCombined()&&role==='ally'?`<button class="ret-act-btn liege" title="Promote to Liege" onclick="uiSetLiege('${fid}')">★ Liege</button>`:'';
+      const liegeBtn=isCombined()&&role==='ally'?`<button class="ret-act-btn liege" title="Promote to Liege" onclick="uiSetLiege('${fid}')">★ Make Liege</button>`:'';
       return `<div class="ret-row active">
         <div class="ret-row-main">
           <div class="ret-row-name">${esc(f?.faction_name||fid)}</div>
-          <div class="ret-row-meta">${badge}<span>${rows} unit${rows===1?'':'s'}</span><span>·</span><span>${sub} pts</span></div>
+          <div class="ret-row-meta"><span>${rows} unit${rows===1?'':'s'}</span><span>·</span><span>${sub} pts</span></div>
         </div>
         <div class="ret-row-actions">
           ${liegeBtn}
