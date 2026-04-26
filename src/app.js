@@ -99,6 +99,21 @@ function parseProfile(profile){
   return res;
 }
 
+// Lookup rule text for an ability name (handles "(Regulars)" qualifiers and the inherent glossary)
+function getAbilityRule(name){
+  const base=(name||'').replace(/\s*\([^)]*\)\s*$/,'').trim().toUpperCase();
+  const u=BW_DATA.purchasable.find(a=>a.name.toUpperCase()===base);
+  const r=BW_DATA.retinue_abilities.find(a=>a.ability.toUpperCase()===base);
+  return u?.effect||r?.effect||(typeof INHERENT_GLOSSARY!=='undefined'?INHERENT_GLOSSARY[base]:'')||'';
+}
+
+// Render a hover-tip chip for an ability. Caller may pre-supply the rule text
+// (e.g. for character abilities where the rule is already inline).
+function abilityChip(name,rule){
+  const r=rule||getAbilityRule(name)||'No rule text on file — see Rules tab or printed supplement.';
+  return `<span class="abi-chip" tabindex="0"><span class="abi-chip-name">${esc(name)}</span><span class="abi-chip-tip">${esc(r)}</span></span>`;
+}
+
 function getInherent(profile){
   const normalised=(profile||'').replace(/\\n/g,'\n');
   const m=normalised.match(/Inherent Abilities: ([^\n]+)/);
@@ -700,14 +715,14 @@ function renderBrowse(){
   container.innerHTML=grouped.map(u=>{
     const isCmd=isCommanderUnit(u);
     const tiers=u.tiers.sort((a,b)=>(TIER_ORDER[a.tier]||0)-(TIER_ORDER[b.tier]||0));
-    const abMatch=(u.full_profile||'').match(/Inherent Abilities: ([^\n]+)/);
-    const abs=abMatch?abMatch[1]:'';
+    const abilNames=getInherent(u.full_profile||'');
+    const chipsHtml=abilNames.map(n=>abilityChip(n)).join('');
     return `<div class="browse-card ${isCmd?'is-commander':'is-warrior'}">
       <div class="bc-hdr">
         <div class="bc-name">${esc(u.unit)}</div>
         <span class="bc-kind ${isCmd?'commander':'warrior'}">${isCmd?'commander':'warrior'}</span>
       </div>
-      ${abs?`<div class="bc-abilities">${esc(abs)}</div>`:''}
+      ${chipsHtml?`<div class="bc-abilities-chips">${chipsHtml}</div>`:''}
       <div class="bc-tiers">${tiers.map(t=>`<span class="bc-tier">${t.tier}: ${t.pts}pts</span>`).join('')}</div>
       <div class="bc-faction">${esc(u.faction_name)}</div>
     </div>`;
@@ -732,16 +747,29 @@ function renderCharsBrowse(){
     container.innerHTML=`<div style="color:var(--text3);text-align:center;padding:40px 0">No characters found for the current filters.</div>`;
     return;
   }
-  container.innerHTML=displayed.map((d,i)=>`
-    <div class="char-browse-card" id="cbc-${i}" onclick="this.classList.toggle('open')">
+  container.innerHTML=displayed.map((d,i)=>{
+    // Parse "• NAME: rule text\n• NAME2: rule text" into chips with the rule text on hover
+    const charChips=(d.character_abilities||'').split(/\n\s*•\s*/).map(s=>s.trim()).filter(Boolean).map(line=>{
+      const cleaned=line.replace(/^•\s*/,'');
+      const m=cleaned.match(/^([A-Z][A-Z'\s\-]+?)\s*[:—]\s*(.+)$/s);
+      if(m)return abilityChip(m[1].trim(),m[2].trim());
+      // Fallback: if we couldn't isolate name+rule, take the first ~40 chars as the name
+      const firstColon=cleaned.search(/[:—]/);
+      const name=firstColon>0?cleaned.slice(0,firstColon).trim():cleaned.slice(0,30).trim();
+      const rule=firstColon>0?cleaned.slice(firstColon+1).trim():'';
+      return abilityChip(name,rule);
+    }).join('');
+    return `<div class="char-browse-card" id="cbc-${i}" onclick="if(!event.target.closest('.abi-chip'))this.classList.toggle('open')">
       <div class="cbc-name">♛ ${esc(d.name)}</div>
       <div class="cbc-retinues">${esc(d.retinues)}</div>
       <div style="font-size:.74rem;color:var(--amber2);font-style:italic">${esc(d.points_note)}</div>
+      ${charChips?`<div class="cbc-chips">${charChips}</div>`:''}
       <div class="cbc-body">
         <div style="margin-bottom:8px">${esc(d.profile_and_rules||'')}</div>
         ${d.character_abilities?`<div class="cbc-abilities">${esc(d.character_abilities).replace(/•\s*/g,'\n• ')}</div>`:``}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ═══════════════════════════════════════════════════════════
