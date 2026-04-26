@@ -409,9 +409,9 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
 .ub-inh-item-name{font-family:'Cinzel',serif;font-size:.78rem;font-weight:600;color:var(--amber2);margin-bottom:2px}
 .ub-inh-item-effect{font-size:.78rem;color:var(--text);line-height:1.45}
 .ub-inh-item-effect-empty{color:var(--text3);font-style:italic}
-.ub-an-src{display:inline-block;font-size:.7rem;color:var(--text3);margin-right:2px;width:11px}
-.ub-an-src.ret{color:var(--amber2)}
-.ub-an-cmd{font-size:.66rem;color:var(--bluelight);margin-left:2px}
+.ub-an-src{display:inline-block;font-size:.78rem;color:var(--text3);margin-right:3px;width:12px;font-weight:600}
+.ub-an-src.ret{color:var(--amber2);text-shadow:0 0 4px rgba(255,213,74,.4)}
+.ub-an-cmd{font-size:.72rem;color:var(--bluelight);margin-left:3px;font-weight:600}
 .abi-ok{color:var(--blue2)}.abi-full{color:var(--red)}
 .ub-abi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
 .ub-abi-it{display:flex;align-items:flex-start;gap:6px;padding:4px 6px;border-radius:3px;cursor:pointer;font-size:.8rem;border:1px solid transparent;transition:all .12s}

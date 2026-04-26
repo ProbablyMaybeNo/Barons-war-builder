@@ -543,10 +543,7 @@ function checkFactionLegality(fid){
     }
   }
 
-  // Marcher: if present without a Welsh ally, remind the player how to use it
-  const hasMarcher=rows.some(r=>(r.selAbilities||[]).some(a=>a.name.toUpperCase()==='MARCHER'));
-  if(hasMarcher&&!state.factions.includes('welsh'))infos.push('ℹ Marcher: add a Welsh Ally retinue to spend up to ⅓ of points on Welsh Groups (excluding Commanders)');
-
+  // Marcher unlock messaging is handled at the combined-list level in collectAlerts()
   const leaderUnits=new Set();
   for(const r of rows)if(MANDATORY_LEADER_NAMES.has(r.unit))leaderUnits.add(r.unit);
   for(const name of leaderUnits)infos.push(`ℹ ${esc(name)} must be designated as the Retinue Leader`);
@@ -567,16 +564,30 @@ function collectAlerts(spent){
   } else if(state.factions.includes('outlaw')){
     infos.push('ℹ Outlaw is correctly placed as an Ally (its Leader may never be the Liege Lord)');
   }
-  if(isCombined()&&liegeFaction()==='feudal_european'&&state.factions.includes('welsh')){
+  // Marcher: Feudal European Liege Leader Ability that unlocks Welsh allied Groups (no Commanders, ≤⅓ pts)
+  if(liegeFaction()==='feudal_european'){
     const liegeRows=factionRows('feudal_european');
     const hasMarcher=liegeRows.some(r=>(r.selAbilities||[]).some(a=>a.name.toUpperCase()==='MARCHER'));
-    if(hasMarcher&&spent>0){
-      const welshAllyPts=factionRows('welsh').filter(r=>r.kind!=='commander').reduce((s,r)=>s+rowTotal(r),0);
-      const pct=(welshAllyPts/spent)*100;
-      const cap=spent/3;
-      if(welshAllyPts>cap)alerts.push(`⚠ Marcher: Welsh allied Groups ${pct.toFixed(0)}% of points (Marcher caps Welsh allies at ⅓ — limit ${Math.floor(cap)} pts, currently ${welshAllyPts})`);
-    } else if(hasMarcher){
-      infos.push('ℹ Marcher: Welsh allied Groups (excluding Commanders) capped at ⅓ of total points');
+    const welshAllied=isCombined()&&state.factions.includes('welsh');
+    if(hasMarcher&&!welshAllied){
+      infos.push('ℹ Marcher unlocked: add Welsh as an Allied retinue to spend up to ⅓ of points on Welsh Groups (Welsh Commanders not permitted under Marcher)');
+    }
+    if(hasMarcher&&welshAllied){
+      const welshRows=factionRows('welsh');
+      const welshCmds=welshRows.filter(r=>r.kind==='commander');
+      if(welshCmds.length){
+        alerts.push(`⚠ Marcher: ${welshCmds.length} Welsh Commander${welshCmds.length===1?'':'s'} present — Marcher only allows Welsh Groups (warriors), not Commanders`);
+      }
+      if(spent>0){
+        const welshAllyPts=welshRows.filter(r=>r.kind!=='commander').reduce((s,r)=>s+rowTotal(r),0);
+        const pct=(welshAllyPts/spent)*100;
+        const cap=spent/3;
+        if(welshAllyPts>cap)alerts.push(`⚠ Marcher: Welsh allied Groups ${pct.toFixed(0)}% of points (cap is ⅓ — limit ${Math.floor(cap)} pts, currently ${welshAllyPts})`);
+        else infos.push(`ℹ Marcher: Welsh allied Groups ${welshAllyPts}/${Math.floor(cap)} pts (⅓ cap)`);
+      }
+    }
+    if(welshAllied&&!hasMarcher){
+      alerts.push('⚠ Welsh allied to Feudal European requires the Liege Leader to take the Marcher Ability (or pick a different Liege)');
     }
   }
 
@@ -985,10 +996,13 @@ function switchToTab(tab){
 
 // Commander-only ability names (from rulebook)
 const COMMANDER_ONLY_ABIS = new Set([
-  'CRUELTY','EXPERIENCED TACTICIAN','FORMIDABLE','INSPIRED LEADER','LUCKY',
+  'CRUELTY','EXPERIENCED KNIGHT','EXPERIENCED TACTICIAN','FORMIDABLE','INSPIRED LEADER','LUCKY',
   'PIOUS AIR','PRELATE','REBEL','RIDE DOWN','ROBUST','STEAL FROM THE RICH',
   'VETERAN CRUSADER','CLOSE RANKS','COUNTER CHARGE','ALL TO GAIN',
-  'FRIENDS OF THE FOREST','DEERHOUNDS','JUSTICIAR','MARCHER','MILANESE STEEL'
+  'FRIENDS OF THE FOREST','DEERHOUNDS','JUSTICIAR','MARCHER','MILANESE STEEL',
+  'CHALLENGER','CRUEL LORD','LORD OF THE SOUTH','MOUNTAIN MIST','NIFER','PATRON OF CULTURE',
+  'PENTEULU','SCHOLAR','SURPRISE RAID','TEULU','EMBOLDENED','BURGEMEESTER',
+  'CRACK SHOT','MELT AWAY'
 ]);
 
 function renderUB(){
