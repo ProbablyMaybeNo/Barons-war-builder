@@ -152,7 +152,7 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
 /* Trait tooltip */
 .trait-tooltip-wrap{position:relative;display:inline-block}
 .trait-tooltip{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:100;min-width:260px;max-width:340px;background:var(--card2);border:1px solid var(--amber);border-radius:5px;padding:10px 13px;font-size:.88rem;color:var(--text2);line-height:1.5;box-shadow:var(--shadow)}
-.trait-tooltip-wrap:hover .trait-tooltip{display:block}
+.trait-tooltip-wrap:hover .trait-tooltip,.trait-tooltip-wrap:focus-within .trait-tooltip,.trait-tooltip-wrap.open .trait-tooltip{display:block}
 
 /* ── RETINUE CARD GRID ── */
 .rcard-grid{display:flex;flex-direction:column;gap:10px}
@@ -284,7 +284,8 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
 .abi-chip:hover,.abi-chip:focus-within{border-color:var(--amber);background:rgba(255,213,74,.1);outline:none;z-index:50}
 .abi-chip-name{pointer-events:none}
 .abi-chip-tip{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:200;width:320px;max-width:90vw;background:var(--card2);border:1px solid var(--amber);border-radius:5px;padding:9px 13px;font-family:'Crimson Pro',serif;font-size:.86rem;font-weight:400;color:var(--text);line-height:1.5;letter-spacing:0;text-transform:none;white-space:normal;box-shadow:var(--shadow);text-align:left}
-.abi-chip:hover .abi-chip-tip,.abi-chip:focus-within .abi-chip-tip{display:block}
+.abi-chip:hover .abi-chip-tip,.abi-chip:focus-within .abi-chip-tip,.abi-chip.open .abi-chip-tip{display:block}
+.abi-chip.open{border-color:var(--amber);background:rgba(255,213,74,.1);z-index:50}
 /* Flip tooltip to the left edge if chip is near the right side of its parent grid */
 .browse-card .abi-chip:nth-last-child(-n+2) .abi-chip-tip{left:auto;right:0}
 .bc-tier{font-family:'Cinzel',serif;font-size:.68rem;padding:2px 8px;border-radius:2px;border:1px solid var(--border2);color:var(--text2)}
@@ -525,35 +526,40 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
 
 @media (max-width: 700px){
   .topbar{
-    padding:10px 12px;
+    padding:8px 12px;
     flex-wrap:wrap;
     align-items:center;
-    row-gap:10px;
+    row-gap:8px;
   }
   .tb-logo{
     width:100%;
     padding:0;
-    font-size:1.02rem;
+    font-size:1rem;
   }
-  .tb-div,
+  .tb-div{display:none}
   .tb-ml{display:none}
-  .tb-cap-label{order:2}
+  .tb-cap-label{order:2;font-size:.7rem}
   .tb-cap-input{
     order:3;
-    width:84px;
+    width:74px;
+    padding:5px 6px;
+    font-size:.92rem;
   }
   .pts-wrap{
     order:4;
-    width:100%;
-    justify-content:space-between;
+    flex:1;
+    min-width:0;
+    justify-content:flex-end;
+    gap:6px;
   }
-  .pts-bar-bg{flex:1;width:auto}
-  .pts-nums{font-size:.76rem}
+  .pts-bar-bg{flex:1;width:auto;min-width:60px;max-width:140px}
+  .pts-nums{font-size:.74rem}
+  /* Save / Load + Export sit side-by-side as a row, not full-width each */
   .tb-btn{
     order:5;
-    width:100%;
-    padding:9px 12px;
-    font-size:.72rem;
+    flex:1;
+    padding:8px 10px;
+    font-size:.7rem;
   }
 
   .tabs,
@@ -644,15 +650,17 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
 
   .ub-modal{
     flex-direction:column;
-    height:calc(100vh - 20px);
-    max-height:calc(100vh - 20px);
+    height:calc(100vh - 12px);
+    max-height:calc(100vh - 12px);
+    margin:0;
+    border-radius:0;
   }
   .ub-main{min-height:0}
   .ub-hdr,
   .ub-scroll,
   .ub-cost-bar{
-    padding-left:14px;
-    padding-right:14px;
+    padding-left:12px;
+    padding-right:12px;
   }
   .ub-sels.two,
   .ub-sels.three,
@@ -661,25 +669,48 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
     grid-template-columns:1fr;
   }
   .ub-stats-grid{grid-template-columns:repeat(3,1fr)}
+  /* Cost bar stays HORIZONTAL on mobile: cost on the left, save/cancel on the right.
+     Sticky to the bottom of the modal so the Save button is always reachable. */
   .ub-cost-bar{
-    flex-direction:column;
-    align-items:stretch;
-    gap:10px;
+    flex-direction:row;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    position:sticky;
+    bottom:0;
+    background:var(--panel);
+    border-top:1px solid var(--border);
+    padding-top:10px;
+    padding-bottom:10px;
   }
-  .ub-btns{
-    width:100%;
-  }
-  .ub-cancel,
-  .ub-save{
-    flex:1;
-    text-align:center;
-  }
+  .ub-cost-l{flex:1;min-width:120px}
+  .ub-cost-bd{font-size:.7rem;flex-wrap:wrap}
+  .ub-cost-pts{font-size:1rem}
+  .ub-btns{flex-shrink:0;display:flex;gap:6px}
+  .ub-cancel,.ub-save{padding:8px 14px;font-size:.78rem}
   .ub-tip{
     width:100%;
     border-left:none;
     border-top:1px solid var(--border);
-    max-height:140px;
+    max-height:120px;
   }
+
+  /* Faction header — actions become a horizontal row below the body, full-width buttons */
+  .faction-hdr{flex-direction:column;gap:8px;padding:10px 12px}
+  .faction-hdr-actions{flex-direction:row;align-self:stretch;min-width:0;margin-left:0;flex-wrap:wrap}
+  .faction-hdr-actions .ret-group-add,
+  .faction-hdr-actions .ret-group-liege{flex:1 1 calc(50% - 3px);min-width:120px;text-align:center}
+  .merc-company-row{flex-wrap:wrap}
+  .merc-company-sel{min-width:0}
+
+  /* Sidebar issues panel — limit height on mobile so it doesn't dominate */
+  .sb-issues-body{max-height:200px}
+  /* Trait tooltips on the faction header become tap-to-toggle (since hover doesn't work on touch) */
+  .trait-tooltip-wrap{position:relative}
+  .faction-trait-tag{cursor:pointer}
+
+  /* Combined-retinue pill wraps cleanly */
+  .combined-pill{font-size:.7rem;padding:6px 10px;line-height:1.4}
 }
 
 @media (max-width: 480px){

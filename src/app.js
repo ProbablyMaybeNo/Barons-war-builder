@@ -111,7 +111,16 @@ function getAbilityRule(name){
 // (e.g. for character abilities where the rule is already inline).
 function abilityChip(name,rule){
   const r=rule||getAbilityRule(name)||'No rule text on file — see Rules tab or printed supplement.';
-  return `<span class="abi-chip" tabindex="0"><span class="abi-chip-name">${esc(name)}</span><span class="abi-chip-tip">${esc(r)}</span></span>`;
+  // tap-to-toggle for touch: clicking the chip toggles .open; clicking outside closes it.
+  return `<span class="abi-chip" tabindex="0" onclick="toggleAbilityChip(event,this)"><span class="abi-chip-name">${esc(name)}</span><span class="abi-chip-tip">${esc(r)}</span></span>`;
+}
+
+// Toggle a chip open and close any others. Outside-click closes all (wired in init()).
+function toggleAbilityChip(ev,el){
+  ev.stopPropagation();
+  const wasOpen=el.classList.contains('open');
+  document.querySelectorAll('.abi-chip.open').forEach(c=>c.classList.remove('open'));
+  if(!wasOpen)el.classList.add('open');
 }
 
 function getInherent(profile){
@@ -1078,6 +1087,19 @@ function init(){
   refreshAll();
   initTabs();
   document.getElementById('ptsCap').addEventListener('input',function(){state.ptsCap=parseInt(this.value)||500;updatePtsBar();});
+  // Close any open ability chip / faction trait tooltip when tapping outside it.
+  // Toggle a faction trait wrap open when tapped on touch (CSS hover doesn't fire on touch).
+  document.addEventListener('click',(e)=>{
+    const chip=e.target.closest('.abi-chip');
+    const trait=e.target.closest('.trait-tooltip-wrap');
+    if(!chip)document.querySelectorAll('.abi-chip.open').forEach(c=>c.classList.remove('open'));
+    if(!trait)document.querySelectorAll('.trait-tooltip-wrap.open').forEach(t=>t.classList.remove('open'));
+    if(trait){
+      const wasOpen=trait.classList.contains('open');
+      document.querySelectorAll('.trait-tooltip-wrap.open').forEach(t=>t.classList.remove('open'));
+      if(!wasOpen)trait.classList.add('open');
+    }
+  });
 }
 
 
@@ -1653,6 +1675,7 @@ Object.assign(window, {
   exportCopyText,
   exportPrintView,
   exportDownloadJSON,
+  toggleAbilityChip,
   openSBUnitModal,
   openSBCharModal,
   renderBrowse,
