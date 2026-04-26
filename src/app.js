@@ -96,8 +96,16 @@ function parseProfile(profile){
 function getInherent(profile){
   const normalised=(profile||'').replace(/\\n/g,'\n');
   const m=normalised.match(/Inherent Abilities: ([^\n]+)/);
-  return m?m[1].split(',').map(a=>a.trim()).filter(Boolean):[];
+  if(!m)return[];
+  return m[1].split(',').map(a=>a.trim()).filter(a=>a&&a!=='—'&&a!=='-'&&a!=='None'&&a!=='none');
 }
+
+// Built-in glossary for inherent-only abilities not in BW_DATA.purchasable / retinue_abilities
+const INHERENT_GLOSSARY={
+  COMMANDER:'This unit is a Commander. It may issue Command Actions to other Groups in its Retinue (within Command Range), lead a Command Group, generate its own Attack dice in Melee, target enemy Warriors in base contact, and be targeted by enemy Warriors in base contact.',
+  PALADIN:'When selecting a Paladin you must choose one Paladin Ability (Cruelty, Experienced Knight, Glory Seekers, Indomitable, or Inspire). The cost is included in the Commander’s profile. The Paladin counts as having that Ability for all rules purposes (e.g. Command Group purchases like Feud).',
+  REPUTATION:'Reputation is everything. The Group and its Commander (if part of the Group) ignore the negative effects of Morale Penalties in Melee Combat.'
+};
 
 function selectedAbilityEffect(row, abilityName){
   const upper=(abilityName||'').toUpperCase();
@@ -1044,12 +1052,15 @@ function renderUB(){
   const selN=new Set(selA.map(a=>a.name));
   const lim=isCustom?(parseInt(_ub.customRank)||2):(isC?getAbilityLimit(_ub.unit):0);
   const atLim=isC&&selA.length>=lim;
-  // Look up descriptions for inherent abilities (from purchasable, retinue, or CG_UPGRADES)
+  // Look up descriptions for inherent abilities. Names may include qualifiers like "(Regulars)"
+  // or "(Green and Irregular)" — strip those before searching BW_DATA. Fall back to the
+  // built-in INHERENT_GLOSSARY for inherent-only abilities (Commander, Paladin, Reputation…).
   const inhDetails=inherent.map(name=>{
-    const upper=name.toUpperCase();
-    const u=BW_DATA.purchasable.find(a=>a.name.toUpperCase()===upper);
-    const r=BW_DATA.retinue_abilities.find(a=>a.ability.toUpperCase()===upper);
-    return{name,effect:u?.effect||r?.effect||''};
+    const base=name.replace(/\s*\([^)]*\)\s*$/,'').trim().toUpperCase();
+    const u=BW_DATA.purchasable.find(a=>a.name.toUpperCase()===base);
+    const r=BW_DATA.retinue_abilities.find(a=>a.ability.toUpperCase()===base);
+    const effect=u?.effect||r?.effect||INHERENT_GLOSSARY[base]||'';
+    return{name,effect};
   });
   h+=`<button class="ub-abi-tog" onclick="document.getElementById('ubAbiBody').classList.toggle('open')">
     <span style="font-family:'Cinzel',serif;font-size:.78rem;font-weight:700">Abilities</span>
