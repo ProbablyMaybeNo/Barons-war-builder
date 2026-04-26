@@ -335,6 +335,11 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;justify-content:center;align-items:center;z-index:1000;padding:16px}
 .modal-overlay.open{display:flex}
 .save-modal{background:var(--panel);border:1px solid var(--border2);border-top:3px solid var(--amber);border-radius:8px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow)}
+.save-modal.export-modal{max-width:640px}
+.export-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.export-actions .sm-btn{flex:1;min-width:160px}
+.export-textarea{width:100%;min-height:280px;background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:'Consolas','Courier New',monospace;font-size:.84rem;line-height:1.45;padding:10px 12px;border-radius:4px;resize:vertical;white-space:pre}
+.export-textarea:focus{outline:none;border-color:var(--amber)}
 .save-modal-hdr{padding:13px 18px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
 .save-modal-title{font-family:'Cinzel',serif;font-size:1rem;font-weight:700;color:var(--amber2)}
 .modal-close{background:transparent;border:1px solid var(--border2);color:var(--text3);cursor:pointer;border-radius:3px;padding:3px 9px;font-size:1rem;transition:all .15s}

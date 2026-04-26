@@ -22,6 +22,7 @@
   </div>
   <div class="tb-ml"></div>
   <button class="tb-btn" onclick="openSaveModal()">💾 Save / Load</button>
+  <button class="tb-btn" onclick="openExportModal()">📤 Export</button>
 </div>
 
 <!-- MAIN -->
@@ -72,6 +73,25 @@
 </div><!-- /main -->
 </div><!-- /app -->
 
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="exportModalOverlay" onclick="if(event.target===this)closeExportModal()">
+  <div class="save-modal export-modal">
+    <div class="save-modal-hdr">
+      <div class="save-modal-title">📤 Export List</div>
+      <button class="modal-close" onclick="closeExportModal()">✕</button>
+    </div>
+    <div class="save-modal-body">
+      <div class="export-actions">
+        <button class="sm-btn" id="exportCopyBtn" onclick="exportCopyText()">📋 Copy as Text</button>
+        <button class="sm-btn" onclick="exportPrintView()">🖨 Open Print View</button>
+        <button class="sm-btn" onclick="exportDownloadJSON()">💾 Download JSON</button>
+      </div>
+      <div class="sm-label">Plain text (auto-copies to clipboard on open)</div>
+      <textarea id="exportTextArea" class="export-textarea" readonly></textarea>
+    </div>
+  </div>
+</div>
+
 <!-- SAVE MODAL -->
 <div class="modal-overlay" id="saveModalOverlay" onclick="if(event.target===this)closeSaveModal()">
   <div class="save-modal">
@@ -91,7 +111,7 @@
   </div>
 </div>
 
-<script type="module" src="../src/app.js?v=20260426b&mode=lite"></script>
+<script type="module" src="../src/app.js?v=20260426c&mode=lite"></script>
 
 <!-- UNIT BUILDER MODAL -->
 <div class="modal-overlay" id="ubOverlay" onclick="if(event.target===this)closeUB()">
