@@ -145,6 +145,10 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
 .faction-trait-tag{font-size:.78rem;font-family:'Cinzel',serif;padding:2px 8px;border-radius:3px;background:rgba(92,13,24,.4);color:var(--amber2);border:1px solid rgba(255,59,48,.3);cursor:pointer}
 .faction-trait-tag:hover{background:rgba(255,59,48,.2);border-color:var(--blue2)}
 .faction-hdr-note{font-size:.88rem;color:var(--text3);font-style:italic}
+.merc-company-row{display:flex;align-items:center;gap:10px;margin:8px 0 4px;padding:7px 10px;background:rgba(255,213,74,.06);border:1px solid var(--border2);border-radius:4px}
+.merc-company-lbl{font-family:'Cinzel',serif;font-size:.78rem;color:var(--amber2);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.merc-company-sel{flex:1;background:var(--panel);border:1px solid var(--border2);color:var(--text);font-family:'Crimson Pro',serif;font-size:.94rem;padding:5px 9px;border-radius:3px;cursor:pointer}
+.merc-company-sel:focus{outline:none;border-color:var(--amber)}
 /* Trait tooltip */
 .trait-tooltip-wrap{position:relative;display:inline-block}
 .trait-tooltip{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:100;min-width:260px;max-width:340px;background:var(--card2);border:1px solid var(--amber);border-radius:5px;padding:10px 13px;font-size:.88rem;color:var(--text2);line-height:1.5;box-shadow:var(--shadow)}

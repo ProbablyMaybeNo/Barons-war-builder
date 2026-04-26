@@ -22,7 +22,10 @@ const WEAPON_CHOICE_RANGED_OPTIONS = ['Javelin','Bow'];
 // ═══════════════════════════════════════════════════════════
 // state.factions: array of selected faction_ids the player is fielding
 // Each row in state.list already carries faction_id, so grouping comes for free
-let state = {factions:[], list:[], ptsCap:500, nextId:1, openPanels:{}};
+let state = {factions:[], list:[], ptsCap:500, nextId:1, openPanels:{}, mercenaryCompany:null};
+
+// Mercenary Company Abilities — only one may be picked per Mercenary retinue
+const MERC_COMPANIES = ['BRABANCON','FLEMISH','GASCON'];
 
 // ═══════════════════════════════════════════════════════════
 // UTILS
@@ -37,6 +40,7 @@ function addFaction(fid){if(!hasFaction(fid))state.factions.push(fid)}
 function removeFaction(fid){
   state.list=state.list.filter(r=>r.faction_id!==fid);
   state.factions=state.factions.filter(f=>f!==fid);
+  if(fid==='mercenary')state.mercenaryCompany=null;
 }
 function factionRows(fid){return state.list.filter(r=>r.faction_id===fid)}
 function factionPts(fid){return factionRows(fid).reduce((s,r)=>s+rowTotal(r),0)}
@@ -52,9 +56,11 @@ function setLiegeFaction(fid){
 // Migrate legacy single-faction saves to multi-faction shape
 function migrateState(s){
   if(!s||typeof s!=='object')return s;
-  if(Array.isArray(s.factions))return s;
-  s.factions=s.faction?[s.faction]:[];
-  delete s.faction;
+  if(!Array.isArray(s.factions)){
+    s.factions=s.faction?[s.faction]:[];
+    delete s.faction;
+  }
+  if(!('mercenaryCompany' in s))s.mercenaryCompany=null;
   return s;
 }
 
@@ -152,7 +158,16 @@ function uniqueUnits(units){
 
 function getAvailableAbilities(fid){
   const generic=BW_DATA.purchasable.map(a=>({name:a.name,cost:a.cost||0,effect:a.effect||'',source:'generic'}));
-  const retinue=BW_DATA.retinue_abilities.filter(a=>a.faction_id===fid).map(a=>({name:a.ability,cost:a.cost||0,effect:a.effect||'',source:'retinue'}));
+  let retinue=BW_DATA.retinue_abilities.filter(a=>a.faction_id===fid).map(a=>({name:a.ability,cost:a.cost||0,effect:a.effect||'',source:'retinue'}));
+  // Mercenary Company Abilities: only the retinue's chosen Company is selectable
+  if(fid==='mercenary'){
+    const chosen=state.mercenaryCompany;
+    retinue=retinue.filter(a=>{
+      const u=a.name.toUpperCase();
+      if(!MERC_COMPANIES.includes(u))return true;
+      return chosen&&u===chosen;
+    });
+  }
   const seen=new Set(generic.map(a=>a.name));
   const out=[...generic];
   for(const a of retinue)if(!seen.has(a.name)){out.push(a);seen.add(a.name);}
@@ -273,6 +288,20 @@ function uiRemoveFaction(fid){
 
 function uiSetLiege(fid){
   setLiegeFaction(fid);
+  refreshAll();
+}
+
+function setMercenaryCompany(name){
+  const newCompany=name||null;
+  if(state.mercenaryCompany===newCompany)return;
+  // Strip any existing company abilities that don't match the new selection from Mercenary unit rows
+  const allow=new Set(newCompany?[newCompany]:[]);
+  for(const r of state.list){
+    if(r.faction_id!=='mercenary')continue;
+    if(!r.selAbilities)continue;
+    r.selAbilities=r.selAbilities.filter(a=>!MERC_COMPANIES.includes(a.name.toUpperCase())||allow.has(a.name.toUpperCase()));
+  }
+  state.mercenaryCompany=newCompany;
   refreshAll();
 }
 
@@ -498,6 +527,8 @@ function checkFactionLegality(fid){
     const companies=new Set();
     for(const r of rows)for(const a of (r.selAbilities||[]))if(MERC_COMPANY_ABILITIES.has(a.name.toUpperCase()))companies.add(a.name.toUpperCase());
     if(companies.size>1)alerts.push(`⚠ Mercenary: ${companies.size} Company Abilities present (${[...companies].join(', ')}); only one allowed`);
+    else if(companies.size===1&&state.mercenaryCompany&&!companies.has(state.mercenaryCompany))alerts.push(`⚠ Mercenary: a unit has a Company Ability (${[...companies][0]}) that doesn't match the retinue's selection (${state.mercenaryCompany})`);
+    if(state.mercenaryCompany)infos.push(`ℹ Mercenary Company: ${state.mercenaryCompany} — units may take this as an additional Inherent Ability for the listed cost`);
     const capitano=rows.find(r=>/capitano/i.test(r.unit||''));
     if(capitano&&capitano.commandGroupRowId){
       const cg=rows.find(r=>r.id===capitano.commandGroupRowId);
@@ -597,6 +628,20 @@ function renderRetinueFactionHdr(){
     const role=factionRole(fid);
     const badge=multi?`<span class="ret-badge ${role}">${role==='liege'?'Liege':'Ally'}</span>`:'';
     const liegeBtn=multi&&role==='ally'?`<button class="ret-group-liege" title="Promote this retinue to Liege" onclick="uiSetLiege('${fid}')">★ Make Liege</button>`:'';
+    // Mercenary Company picker (only on the Mercenary card)
+    let mercCompanyHtml='';
+    if(fid==='mercenary'){
+      const sel=state.mercenaryCompany||'';
+      mercCompanyHtml=`<div class="merc-company-row">
+        <label class="merc-company-lbl">Mercenary Company</label>
+        <select class="merc-company-sel" onchange="setMercenaryCompany(this.value)">
+          <option value="" ${!sel?'selected':''}>— None chosen —</option>
+          <option value="BRABANCON" ${sel==='BRABANCON'?'selected':''}>Brabançon (+2 pts/Group)</option>
+          <option value="FLEMISH" ${sel==='FLEMISH'?'selected':''}>Flemish (+1 pt/Group)</option>
+          <option value="GASCON" ${sel==='GASCON'?'selected':''}>Gascon (+2 pts/Group)</option>
+        </select>
+      </div>`;
+    }
     return `<div class="faction-hdr">
       <div class="faction-hdr-body">
         <div class="faction-hdr-name">⚜ ${esc(f?.faction_name||fid)} ${badge}</div>
@@ -609,6 +654,7 @@ function renderRetinueFactionHdr(){
                 <div class="trait-tooltip">${esc(t.description||'')}</div>
               </div>`).join('')}
         </div>
+        ${mercCompanyHtml}
         ${!LITE_MODE&&f?.restriction_notes?`<div class="faction-hdr-note">${esc(f.restriction_notes)}</div>`:''}
         ${!LITE_MODE&&f?.green_min_pct?`<div class="faction-hdr-note">Min. ${f.green_min_pct}% points on Green troops.${f.rabble_min_pct?` Min. ${f.rabble_min_pct}% on Rabble.`:''}</div>`:''}
       </div>
@@ -821,13 +867,14 @@ function doSave(){
   if(!name){alert('Enter a name.');return;}
   const saves=getSaved();
   const stripped=state.list.map(r=>{const c={...r};delete c.unitData;return c;});
-  saves[name]={schema:2,factions:[...state.factions],ptsCap:state.ptsCap,list:stripped,savedAt:new Date().toLocaleString()};
+  saves[name]={schema:3,factions:[...state.factions],ptsCap:state.ptsCap,mercenaryCompany:state.mercenaryCompany,list:stripped,savedAt:new Date().toLocaleString()};
   setSaved(saves);document.getElementById('saveNameInput').value='';renderSavedList();
 }
 function doLoad(name){
   const saves=getSaved();const s=migrateState(saves[name]);if(!s)return;
   state.factions=Array.isArray(s.factions)?[...s.factions]:[];
   state.ptsCap=s.ptsCap||500;
+  state.mercenaryCompany=s.mercenaryCompany||null;
   state.list=(s.list||[]).map(r=>{
     const uData=BW_DATA.units.find(u=>u.faction_id===r.faction_id&&u.unit===r.unit&&u.experience_tier===r.tier)||null;
     return{...r,unitData:uData,kind:uData?(isCommanderUnit(uData)?'commander':uData.kind):r.kind,_openPanel:null};
@@ -1426,6 +1473,7 @@ Object.assign(window, {
   uiSetLiege,
   toggleAddRetinue,
   setRulesFilter,
+  setMercenaryCompany,
   openSBUnitModal,
   openSBCharModal,
   renderBrowse,
