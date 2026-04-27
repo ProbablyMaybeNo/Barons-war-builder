@@ -20,6 +20,19 @@ def fold(s: str) -> str:
     return re.sub(r'[^a-z0-9]', '', s.lower())
 
 
+def clean_item(name: str) -> str:
+    """Strip trailing footnote markers and parenthetical caveats and normalise casing so the result matches EQUIP keys."""
+    s = name.strip()
+    s = re.sub(r'\s*\([^)]*\)\s*$', '', s)  # drop trailing "(* unless ...)" qualifiers
+    s = re.sub(r'\*+$', '', s).strip()
+    if not s:
+        return s
+    # Title-case any item that has any lowercase letters following a space — covers "Hand weapon" -> "Hand Weapon"
+    if re.search(r'[a-z]', s):
+        s = ' '.join(w.capitalize() if w[:1].islower() else w for w in s.split())
+    return s
+
+
 def parse_options_text(text: str) -> dict:
     """Pull the structured choices out of the options paragraphs."""
     out = {
@@ -48,27 +61,27 @@ def parse_options_text(text: str) -> dict:
             continue
         m = re.match(r'Weapon, Must choose one:\s*(.+)', line, re.I)
         if m:
-            out['weapon_must'] = [w.strip() for w in m.group(1).split(',') if w.strip()]
+            out['weapon_must'] = [clean_item(w) for w in m.group(1).split(',') if w.strip()]
             continue
         m = re.match(r'Weapon, May choose one:\s*(.+)', line, re.I)
         if m:
-            out['weapon_may'] = [w.strip() for w in m.group(1).split(',') if w.strip()]
+            out['weapon_may'] = [clean_item(w) for w in m.group(1).split(',') if w.strip()]
             continue
-        m = re.match(r'Armou?r, Must choose one:\s*(.+)', line, re.I)
+        m = re.match(r'Armou?r, (?:Must|May)\*? choose one:\s*(.+)', line, re.I)
         if m:
-            out['armour'] = [w.strip() for w in m.group(1).split(',') if w.strip()]
+            out['armour'] = [clean_item(w) for w in m.group(1).split(',') if w.strip()]
             continue
         m = re.match(r'Shield, (?:Must|May)\*? choose one:\s*(.+)', line, re.I)
         if m:
-            out['shield'] = [w.strip() for w in m.group(1).split(',') if w.strip()]
+            out['shield'] = [clean_item(w) for w in m.group(1).split(',') if w.strip()]
             continue
         m = re.match(r'Mount, (?:Must|May)\*? choose one:\s*(.+)', line, re.I)
         if m:
-            out['mount'] = [w.strip() for w in m.group(1).split(',') if w.strip()]
+            out['mount'] = [clean_item(w) for w in m.group(1).split(',') if w.strip()]
             continue
         m = re.match(r'Command Group upgrades?:\s*(.+)', line, re.I)
         if m:
-            out['cg_upgrades'] = [w.strip() for w in m.group(1).split(',') if w.strip()]
+            out['cg_upgrades'] = [clean_item(w) for w in m.group(1).split(',') if w.strip()]
             continue
         m = re.match(r'Command Group must be made from:\s*(.+)', line, re.I)
         if m:
@@ -151,9 +164,11 @@ def main():
             new_entries.append(bare.title())
 
     # For each dramatis with one variant, hoist the fields up so we don't always nest.
+    # For multi-variant entries (e.g. William Marshal Regent + Young), use the first as default
+    # but keep the list under `variants` so the UI can let the user switch.
     for d in dram:
         vs = d.get('variants', [])
-        if len(vs) == 1:
+        if len(vs) >= 1:
             v = vs[0]
             d.update({
                 'stats': v['stats'],
@@ -169,7 +184,8 @@ def main():
                 'character_abilities_struct': v['character_abilities'],
                 'options_notes': v['options_notes'],
             })
-            del d['variants']
+            if len(vs) == 1:
+                del d['variants']
 
     new_src = src[:start] + json.dumps(bw, ensure_ascii=False) + rest
     DATA_PATH.write_text(new_src, encoding='utf-8')

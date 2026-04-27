@@ -1434,8 +1434,8 @@ function renderUB(){
     ${stats.note?`<div class="ub-stat-note" id="ubStatNote">${esc(stats.note)}</div>`:`<div id="ubStatNote"></div>`}
   </div>`;
 
-  // Equipment
-  if(!isNamed&&(parsed.weaponsMust.length||parsed.armor.length||parsed.mounts.length||parsed.shields.length)){
+  // Equipment — show for named characters too; their parsed lists come from BW_DATA.dramatis
+  if((isChar||!isNamed)&&(parsed.weaponsMust.length||parsed.weaponsMay.length||parsed.armor.length||parsed.mounts.length||parsed.shields.length)){
     h+=`<div class="ub-st">Equipment</div>`;
     const isTH=TWO_HANDED.has(_ub.selWeapon||'');
     const left=[];const right=[];
