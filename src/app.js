@@ -281,7 +281,7 @@ function rowTotal(row){
   const pts=parseInt(row.ptsPerW)||parseInt(row.unitData?.pts_per_warrior)||0;
   const eqC=n=>n?(EQUIP[n]?.cost||0):0;
   const eq=w*(eqC(row.selWeapon)+eqC(row.selOptWeapon)+eqC(row.selArmor)+eqC(row.selShield)+eqC(row.selMount));
-  const abi=(row.selAbilities||[]).reduce((s,a)=>s+(a.cost||0),0);
+  const abi=w*(row.selAbilities||[]).reduce((s,a)=>s+(a.cost||0),0);
   const cg=(row.selCGUpgrades||[]).reduce((s,u)=>s+getCommandUpgradeCost(u),0);
   const misc=parseInt(row.miscExtra)||0;
   return w*pts+eq+abi+cg+misc;
@@ -1115,7 +1115,15 @@ function doLoad(name){
   state.mercenaryCompany=s.mercenaryCompany||null;
   state.list=(s.list||[]).map(r=>{
     const uData=BW_DATA.units.find(u=>u.faction_id===r.faction_id&&u.unit===r.unit&&u.experience_tier===r.tier)||null;
-    return{...r,unitData:uData,kind:uData?(isCommanderUnit(uData)?'commander':uData.kind):r.kind,_openPanel:null};
+    // Re-sync derived fields (hasRabble, kind) from the current data file — the saved list
+    // may pre-date a data fix.
+    return{
+      ...r,
+      unitData:uData,
+      kind:uData?(isCommanderUnit(uData)?'commander':uData.kind):r.kind,
+      hasRabble:uData?!!uData.has_rabble:!!r.hasRabble,
+      _openPanel:null,
+    };
   });
   // Make sure every row's faction is also in state.factions (backfill from row data)
   for(const r of state.list)if(r.faction_id&&!state.factions.includes(r.faction_id))state.factions.push(r.faction_id);
@@ -1354,7 +1362,9 @@ function renderUB(){
   const selA=_ub.selAbilities||[];
   const selN=new Set(selA.map(a=>a.name));
   const lim=isCustom?(parseInt(_ub.customRank)||2):(isC?getAbilityLimit(_ub.unit):0);
-  const atLim=isC&&selA.length>=lim;
+  // Mercenary Company Abilities count as additional Inherent — they don't fill a Purchasable slot.
+  const slotFilling=selA.filter(a=>!MERC_COMPANY_ABILITIES.has(a.name.toUpperCase())).length;
+  const atLim=isC&&slotFilling>=lim;
   // Look up descriptions for inherent abilities. Names may include qualifiers like "(Regulars)"
   // or "(Green and Irregular)" — strip those before searching BW_DATA. Fall back to the
   // built-in INHERENT_GLOSSARY for inherent-only abilities (Commander, Paladin, Reputation…).
@@ -1375,7 +1385,7 @@ function renderUB(){
       <div class="ub-inh-list">
         ${inhDetails.map(d=>`<div class="ub-inh-item"><div class="ub-inh-item-name">${esc(d.name)}</div>${d.effect?`<div class="ub-inh-item-effect">${esc(d.effect)}</div>`:`<div class="ub-inh-item-effect ub-inh-item-effect-empty">Faction trait — see Rules tab.</div>`}</div>`).join('')}
       </div>`:''}
-    ${isC?`<div class="ub-abi-lim">Slots: <span class="${atLim?'abi-full':'abi-ok'}" id="ubAbiLim">${selA.length} / ${lim}</span></div>`:''}
+    ${isC?`<div class="ub-abi-lim">Slots: <span class="${atLim?'abi-full':'abi-ok'}" id="ubAbiLim">${slotFilling} / ${lim}</span></div>`:''}
     ${(()=>{
       const renderAbi=a=>{
         const ck=selN.has(a.name);
@@ -1396,7 +1406,10 @@ function renderUB(){
           <span class="ub-an">${esc(a.name)}${cmdOnly?' <span class="ub-an-cmd" title="Commander only">⚔</span>':''}</span>
           <span class="ub-ac">+${a.cost||0}</span></label>`;
       };
-      const visible=abils.filter(a=>isC||!COMMANDER_ONLY_ABIS.has(a.name.toUpperCase()));
+      // Filter out abilities that the unit already has as Inherent — they're baked into the unit cost
+      // and shouldn't be re-purchasable. Strip "(Regulars)"-style qualifiers before comparing.
+      const inhSet=new Set(inherent.map(n=>n.replace(/\s*\([^)]*\)\s*$/,'').trim().toUpperCase()));
+      const visible=abils.filter(a=>(isC||!COMMANDER_ONLY_ABIS.has(a.name.toUpperCase()))&&!inhSet.has(a.name.toUpperCase()));
       const retinue=visible.filter(a=>a.source==='retinue');
       const universal=visible.filter(a=>a.source==='generic');
       let out='';
@@ -1570,10 +1583,13 @@ function ubTogAbi(name,cost,ck){
   const isC=_ub._isCustom||_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
   if(COMMANDER_ONLY_ABIS.has(name.toUpperCase())&&!isC)return; // warriors can't take commander-only
   const lim=_ub._isCustom?(parseInt(_ub.customRank)||2):(isC?getAbilityLimit(_ub.unit):999);
+  const isMercCompany=MERC_COMPANY_ABILITIES.has(name.toUpperCase());
   if(ck){
     const restriction=checkAbilityRestriction(name,_ub);
     if(restriction!==true)return; // restriction not met — block selection
-    if(isC&&_ub.selAbilities.length>=lim)return;
+    // Merc Company Abilities are additional Inherent — they bypass the slot limit.
+    const slotFilling=_ub.selAbilities.filter(a=>!MERC_COMPANY_ABILITIES.has(a.name.toUpperCase())).length;
+    if(isC&&!isMercCompany&&slotFilling>=lim)return;
     if(!_ub.selAbilities.find(a=>a.name===name))_ub.selAbilities.push({name,cost});
   }
   else _ub.selAbilities=_ub.selAbilities.filter(a=>a.name!==name);
@@ -1590,14 +1606,17 @@ function refreshAbilityGating(){
   const isC=_ub._isCustom||_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
   const lim=_ub._isCustom?(parseInt(_ub.customRank)||2):(isC?getAbilityLimit(_ub.unit):999);
   const selN=new Set((_ub.selAbilities||[]).map(a=>a.name));
-  const atLim=isC&&(_ub.selAbilities||[]).length>=lim;
+  // Merc Company Abilities don't fill a slot.
+  const slotFilling=(_ub.selAbilities||[]).filter(a=>!MERC_COMPANY_ABILITIES.has(a.name.toUpperCase())).length;
+  const atLim=isC&&slotFilling>=lim;
   body.querySelectorAll('.ub-abi-it').forEach(it=>{
     const inp=it.querySelector('input');if(!inp)return;
     const m=(inp.getAttribute('onchange')||'').match(/'([^']+)'/);
     const n=m?m[1]:'';
     const isCk=selN.has(n);
     const cmdOnly=COMMANDER_ONLY_ABIS.has(n.toUpperCase());
-    const slotBlocked=isC&&!isCk&&atLim;
+    const isMercCompany=MERC_COMPANY_ABILITIES.has(n.toUpperCase());
+    const slotBlocked=isC&&!isCk&&!isMercCompany&&atLim;
     const cmdBlocked=cmdOnly&&!isC&&!isCk;
     const restriction=checkAbilityRestriction(n,_ub);
     const restrictionBlocked=restriction!==true&&!isCk;
@@ -1606,7 +1625,7 @@ function refreshAbilityGating(){
     inp.checked=isCk;inp.disabled=isDis;
   });
   const limEl=document.getElementById('ubAbiLim');
-  if(limEl){limEl.textContent=`${(_ub.selAbilities||[]).length} / ${lim}`;limEl.className=atLim?'abi-full':'abi-ok';}
+  if(limEl){limEl.textContent=`${slotFilling} / ${lim}`;limEl.className=atLim?'abi-full':'abi-ok';}
 }
 
 function ubUpdateCost(){
@@ -1616,7 +1635,7 @@ function ubUpdateCost(){
   const pts=parseInt(_ub.ptsPerW)||parseInt(_ub.unitData?.pts_per_warrior)||0;
   const eqC=n=>n?(EQUIP[n]?.cost||0):0;
   const eq=w*(eqC(_ub.selWeapon)+eqC(_ub.selOptWeapon)+eqC(_ub.selArmor)+eqC(_ub.selShield)+eqC(_ub.selMount));
-  const abi=(_ub.selAbilities||[]).reduce((s,a)=>s+(a.cost||0),0);
+  const abi=w*(_ub.selAbilities||[]).reduce((s,a)=>s+(a.cost||0),0);
   const cg=(_ub.selCGUpgrades||[]).reduce((s,u)=>s+getCommandUpgradeCost(u),0);
   const misc=parseInt(_ub.miscExtra)||0;
   const base=w*pts;const total=base+eq+abi+cg+misc;
@@ -1707,13 +1726,18 @@ function renderRow(row){
   const abiTags=(row.selAbilities||[]).map(a=>`<span class="r-tag-a">${esc(a.name)}</span>`).join('');
   const hasTags=eqTags||cgTags||inhTags||abiTags;
   // CG assignment — restrict candidates to the same faction as the commander
-  const cgCands=isC?state.list.filter(r=>r.id!==row.id&&r.kind!=='commander'&&r.faction_id===row.faction_id&&cgMatch(r.unit,parsed.cgMust||parsed.cgMustFrom)):[];
+  const cgRequirement=parsed.cgMust||parsed.cgMustFrom;
+  const cgCands=isC?state.list.filter(r=>r.id!==row.id&&r.kind!=='commander'&&r.faction_id===row.faction_id&&cgMatch(r.unit,cgRequirement)):[];
+  const cgEmptyHint=cgRequirement
+    ?`Add <strong>${esc(cgRequirement)}</strong> to the list, then assign here.`
+    :'Add a Warrior Group to this retinue, then assign here.';
   const cgAssign=isC?`<div class="rrow-cg">
     <span class="rrow-cg-lbl">⚑ Group</span>
-    <select class="rrow-cg-sel" onchange="assignCG(${row.id},this.value)">
+    ${cgCands.length?`<select class="rrow-cg-sel" onchange="assignCG(${row.id},this.value)">
       <option value="">— Unassigned —</option>
       ${cgCands.map(c=>`<option value="${c.id}" ${c.id===row.commandGroupRowId?'selected':''}>${esc(c.unit)} (${esc(c.tier)}, ×${c.warriors||1})</option>`).join('')}
-    </select></div>`:'';
+    </select>`:`<span class="rrow-cg-hint">${cgEmptyHint}</span>`}
+    </div>`:'';
   return `<div class="rrow ${isC?'cmd-row':'war-row'}">
     <div class="rrow-top">
       <div class="rrow-left">

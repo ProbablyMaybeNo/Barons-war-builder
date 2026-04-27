@@ -493,6 +493,8 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
 .rrow-cg-lbl{font-size:.68rem;color:var(--text3);white-space:nowrap;font-family:'Cinzel',serif;text-transform:uppercase;letter-spacing:.05em}
 .rrow-cg-sel{background:var(--card2);border:1px solid var(--border2);color:var(--text2);font-family:'Crimson Pro',serif;font-size:.8rem;padding:3px 7px;border-radius:3px;flex:1;cursor:pointer}
 .rrow-cg-sel:focus{outline:none;border-color:var(--amber)}
+.rrow-cg-hint{flex:1;font-size:.74rem;color:var(--text3);font-style:italic;line-height:1.4}
+.rrow-cg-hint strong{color:var(--amber);font-style:normal}
 /* Section dividers */
 .sec-hdr{display:flex;align-items:center;gap:9px;margin:13px 0 7px;padding:0 2px}
 .sec-hdr-line{flex:1;height:1px;background:var(--border2)}
