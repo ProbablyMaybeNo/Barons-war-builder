@@ -357,6 +357,8 @@ function uiAddFaction(fid){
   addFaction(fid);
   renderFactionPicker(false);
   refreshAll();
+  // On mobile, the drawer hosts the picker — close it so the user lands on the retinue tab
+  closeMobileDrawer();
 }
 
 function uiRemoveFaction(fid){
@@ -513,7 +515,46 @@ function updatePtsBar(){
   document.getElementById('ptsCap2').textContent=cap;
   const tp=document.getElementById('retinueTotalPts');
   if(tp){tp.textContent=spent;tp.className='rt-pts'+(spent>cap?' over':'');}
+  // Mobile bottom-bar mirrors the same readout
+  const mSpent=document.getElementById('mBbSpent');
+  const mCap=document.getElementById('mBbCap');
+  const mPts=document.getElementById('mBbPts');
+  const mCnt=document.getElementById('mBbRetinueCnt');
+  if(mSpent)mSpent.textContent=spent;
+  if(mCap)mCap.textContent=cap;
+  if(mPts)mPts.className='m-bb-pts'+(spent>cap?' over':'');
+  if(mCnt){
+    mCnt.textContent=state.factions.length;
+    mCnt.dataset.empty=state.factions.length?'0':'1';
+  }
   renderAlerts(spent);
+}
+
+// ─── Mobile drawer / menu controllers ─────────────────────────────────────
+function openMobileDrawer(){
+  document.querySelector('.sidebar')?.classList.add('m-open');
+  document.getElementById('mDrawerBd')?.classList.add('open');
+}
+function closeMobileDrawer(){
+  document.querySelector('.sidebar')?.classList.remove('m-open');
+  document.getElementById('mDrawerBd')?.classList.remove('open');
+}
+function openMobileMenu(){
+  // Sync the cap input in the menu with the topbar version each time it opens
+  const cap=document.getElementById('ptsCap')?.value||state.ptsCap;
+  const mCap=document.getElementById('mMenuCap');
+  if(mCap)mCap.value=cap;
+  document.getElementById('mobileMenuOverlay')?.classList.add('open');
+}
+function closeMobileMenu(){
+  // Carry any cap edit back to the canonical input, so existing change handlers fire
+  const mCap=document.getElementById('mMenuCap');
+  const cap=document.getElementById('ptsCap');
+  if(mCap&&cap&&mCap.value&&parseInt(mCap.value)!==parseInt(cap.value)){
+    cap.value=mCap.value;
+    cap.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+  document.getElementById('mobileMenuOverlay')?.classList.remove('open');
 }
 
 // Heuristic: cavalry if mounted unit name, equipped mount, or has horsemen-style name
@@ -1738,7 +1779,7 @@ function renderRow(row){
       ${cgCands.map(c=>`<option value="${c.id}" ${c.id===row.commandGroupRowId?'selected':''}>${esc(c.unit)} (${esc(c.tier)}, ×${c.warriors||1})</option>`).join('')}
     </select>`:`<span class="rrow-cg-hint">${cgEmptyHint}</span>`}
     </div>`:'';
-  return `<div class="rrow ${isC?'cmd-row':'war-row'}">
+  return `<div class="rrow ${isC?'cmd-row':'war-row'}" onclick="rrowTap(event,${row.id})">
     <div class="rrow-top">
       <div class="rrow-left">
         <div class="rrow-name-line">
@@ -1753,13 +1794,22 @@ function renderRow(row){
       <div class="rrow-right">
         <div class="rrow-cost">${tot} pts</div>
         <div class="rrow-btns">
-          <button class="rrow-edit" onclick="openUBEdit(${row.id})">⚙ Edit</button>
-          <button class="rrow-del" onclick="deleteRow(${row.id})">✕</button>
+          <button class="rrow-edit" onclick="event.stopPropagation();openUBEdit(${row.id})">⚙ Edit</button>
+          <button class="rrow-del" onclick="event.stopPropagation();deleteRow(${row.id})">✕</button>
         </div>
       </div>
     </div>
     ${cgAssign}
   </div>`;
+}
+
+// Tap-to-edit at the row level. Inner buttons stopPropagation to keep
+// their dedicated click handlers on desktop. The CG <select> needs to
+// stay interactive too — ignore taps that originate inside it.
+function rrowTap(ev,id){
+  const t=ev.target;
+  if(t.closest('select')||t.closest('option')||t.closest('button'))return;
+  openUBEdit(id);
 }
 
 function cgMatch(unitName,cgMust){
@@ -1823,5 +1873,10 @@ Object.assign(window, {
   showTipKey,
   clearTip,
   deleteRow,
-  assignCG
+  assignCG,
+  rrowTap,
+  openMobileDrawer,
+  closeMobileDrawer,
+  openMobileMenu,
+  closeMobileMenu
 });

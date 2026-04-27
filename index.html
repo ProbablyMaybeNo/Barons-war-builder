@@ -21,8 +21,9 @@
     <div class="pts-nums" id="ptsNums"><span class="sp" id="ptsSpent">0</span> / <span id="ptsCap2">500</span> pts</div>
   </div>
   <div class="tb-ml"></div>
-  <button class="tb-btn" onclick="openSaveModal()">💾 Save / Load</button>
-  <button class="tb-btn" onclick="openExportModal()">📤 Export</button>
+  <button class="tb-btn tb-btn-desktop" onclick="openSaveModal()">💾 Save / Load</button>
+  <button class="tb-btn tb-btn-desktop" onclick="openExportModal()">📤 Export</button>
+  <button class="tb-btn tb-btn-mobile" id="tbMenuBtn" onclick="openMobileMenu()" aria-label="Menu">⋯</button>
 </div>
 
 <!-- MAIN -->
@@ -112,7 +113,44 @@
 
 </div><!-- /content -->
 </div><!-- /main -->
+
+<!-- MOBILE BOTTOM BAR (mobile-only via CSS) -->
+<div class="m-bottom-bar" id="mBottomBar">
+  <button class="m-bb-trigger" onclick="openMobileDrawer()" aria-label="Open retinues panel">
+    <span class="m-bb-trigger-icon">⚜</span>
+    <span class="m-bb-trigger-lbl">Retinues</span>
+    <span class="m-bb-cnt" id="mBbRetinueCnt">0</span>
+  </button>
+  <div class="m-bb-pts" id="mBbPts">
+    <span class="m-bb-pts-spent" id="mBbSpent">0</span>
+    <span class="m-bb-pts-sep">/</span>
+    <span class="m-bb-pts-cap" id="mBbCap">500</span>
+    <span class="m-bb-pts-lbl">pts</span>
+  </div>
+</div>
+
+<!-- MOBILE DRAWER BACKDROP -->
+<div class="m-drawer-bd" id="mDrawerBd" onclick="closeMobileDrawer()"></div>
+
 </div><!-- /app -->
+
+<!-- MOBILE MENU MODAL -->
+<div class="modal-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)closeMobileMenu()">
+  <div class="save-modal m-menu-modal">
+    <div class="save-modal-hdr">
+      <div class="save-modal-title">⚔ Menu</div>
+      <button class="modal-close" onclick="closeMobileMenu()">✕</button>
+    </div>
+    <div class="save-modal-body">
+      <div class="m-menu-cap-row">
+        <span class="sm-label" style="margin:0">Points Cap</span>
+        <input type="number" class="tb-cap-input m-menu-cap-input" id="mMenuCap" min="100" max="9999" step="50">
+      </div>
+      <button class="sm-btn m-menu-btn" onclick="closeMobileMenu();openSaveModal()">💾 Save / Load</button>
+      <button class="sm-btn m-menu-btn" onclick="closeMobileMenu();openExportModal()">📤 Export</button>
+    </div>
+  </div>
+</div>
 
 <!-- EXPORT MODAL -->
 <div class="modal-overlay" id="exportModalOverlay" onclick="if(event.target===this)closeExportModal()">
@@ -153,7 +191,7 @@
 </div>
 
 
-<script type="module" src="./src/app.js?v=20260427a-bugfix"></script>
+<script type="module" src="./src/app.js?v=20260427b-mobile"></script>
 
 <!-- UNIT BUILDER MODAL -->
 <div class="modal-overlay" id="ubOverlay" onclick="if(event.target===this)closeUB()">

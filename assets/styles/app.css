@@ -333,7 +333,7 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
 .equip-ref-table .cost-col{font-family:'Cinzel',serif;color:var(--amber2);text-align:center}
 
 /* ── SAVE/LOAD MODAL ── */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;justify-content:center;align-items:center;z-index:1000;padding:16px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;justify-content:center;align-items:center;z-index:800;padding:16px}
 .modal-overlay.open{display:flex}
 .save-modal{background:var(--panel);border:1px solid var(--border2);border-top:3px solid var(--amber);border-radius:8px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow)}
 .save-modal.export-modal{max-width:640px}
@@ -370,7 +370,7 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
 ::-webkit-scrollbar-thumb:hover{background:var(--amber)}
 
 /* ── UNIT BUILDER MODAL ── */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;justify-content:center;align-items:center;z-index:500;padding:10px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;justify-content:center;align-items:center;z-index:800;padding:10px}
 .modal-overlay.open{display:flex}
 .ub-modal{background:var(--panel);border:1px solid var(--border2);border-radius:8px;width:100%;max-width:940px;max-height:96vh;display:flex;overflow:hidden;box-shadow:var(--shadow)}
 .ub-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
@@ -745,3 +745,236 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
   .ub-abi-it{font-size:.78rem}
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   MOBILE UX OVERHAUL  (≤700px)
+   Bottom-anchored retinues drawer, slim topbar, kebab menu, collapsed
+   retinue rows, sticky points bar. Desktop layout untouched above.
+   ───────────────────────────────────────────────────────────────────── */
+
+/* Default desktop visibility for the new bits — hidden until media query opens them. */
+.tb-btn-mobile{display:none}
+.m-bottom-bar{display:none}
+.m-drawer-bd{display:none}
+
+@media (max-width: 700px){
+  /* Topbar — drop the desktop-only buttons, swap the cap input out (lives in the kebab menu now), keep the points bar centre-stage. */
+  .tb-btn-desktop{display:none}
+  .tb-btn-mobile{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:34px;
+    height:34px;
+    padding:0;
+    font-size:1.4rem;
+    line-height:1;
+    flex:0 0 auto;
+    order:6;
+  }
+  .topbar .tb-cap-label{display:none}
+  .topbar .tb-cap-input{display:none}
+  .topbar{
+    flex-wrap:nowrap;
+    padding:6px 10px;
+    gap:8px;
+    row-gap:0;
+  }
+  .tb-logo{
+    width:auto;
+    flex:0 0 auto;
+    font-size:.92rem;
+    padding:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:48vw;
+  }
+  .tb-logo span{display:none}
+  .pts-wrap{
+    order:4;
+    flex:1 1 auto;
+    min-width:0;
+    justify-content:flex-end;
+    gap:6px;
+  }
+
+  /* Move the existing sidebar into a bottom-anchored drawer. */
+  .main{position:relative}
+  .sidebar{
+    position:fixed;
+    left:0;right:0;bottom:0;
+    top:auto;
+    width:100%;
+    max-height:78vh;
+    z-index:600;
+    background:var(--panel);
+    border:none;
+    border-top:2px solid var(--blue);
+    border-radius:14px 14px 0 0;
+    box-shadow:0 -10px 36px rgba(0,0,0,.6);
+    transform:translateY(105%);
+    transition:transform .25s ease;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .sidebar.m-open{transform:translateY(0)}
+  /* Drawer grab-handle pseudo + close affordance */
+  .sidebar::before{
+    content:'';
+    display:block;
+    width:48px;height:4px;
+    background:var(--border2);
+    border-radius:2px;
+    margin:8px auto 4px;
+    flex:0 0 auto;
+  }
+  .sidebar > .sb-section{overflow-y:auto}
+
+  /* Backdrop behind the drawer. */
+  .m-drawer-bd{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    z-index:550;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease;
+  }
+  .m-drawer-bd.open{
+    display:block;
+    opacity:1;
+    pointer-events:auto;
+  }
+
+  /* Bottom action bar — always visible, hosts the drawer trigger and the live points readout. */
+  .m-bottom-bar{
+    display:flex;
+    position:fixed;
+    left:0;right:0;bottom:0;
+    z-index:540;
+    padding:8px 12px env(safe-area-inset-bottom,8px);
+    background:linear-gradient(180deg,rgba(34,2,7,.95) 0%,#220207 100%);
+    border-top:1px solid var(--border2);
+    align-items:center;
+    gap:10px;
+    box-shadow:0 -4px 18px rgba(0,0,0,.5);
+  }
+  .m-bb-trigger{
+    display:flex;align-items:center;gap:6px;
+    background:var(--card);
+    border:1px solid var(--border2);
+    color:var(--text2);
+    font-family:'Cinzel',serif;
+    font-size:.78rem;
+    letter-spacing:.04em;
+    padding:9px 14px;
+    border-radius:22px;
+    cursor:pointer;
+    transition:border-color .15s,color .15s;
+  }
+  .m-bb-trigger:hover,.m-bb-trigger:focus{border-color:var(--amber);color:var(--amber2);outline:none}
+  .m-bb-trigger-icon{font-size:.95rem;color:var(--amber2)}
+  .m-bb-trigger-lbl{text-transform:uppercase}
+  .m-bb-cnt{
+    background:var(--blue);
+    color:#fff;
+    font-family:'Cinzel',serif;
+    font-size:.66rem;font-weight:700;
+    min-width:18px;height:18px;
+    padding:0 5px;
+    border-radius:9px;
+    display:inline-flex;align-items:center;justify-content:center;
+    line-height:1;
+  }
+  .m-bb-cnt[data-empty="1"]{background:var(--border2);color:var(--text3)}
+  .m-bb-pts{
+    margin-left:auto;
+    display:flex;align-items:baseline;gap:3px;
+    font-family:'Cinzel',serif;
+    color:var(--text);
+    padding-right:4px;
+  }
+  .m-bb-pts-spent{font-size:1.1rem;font-weight:700;color:var(--amber2)}
+  .m-bb-pts.over .m-bb-pts-spent{color:var(--red)}
+  .m-bb-pts-sep{color:var(--text3);font-size:.9rem}
+  .m-bb-pts-cap{color:var(--text2);font-size:.9rem}
+  .m-bb-pts-lbl{color:var(--text3);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;margin-left:3px}
+
+  /* Reserve room at the bottom of the content + retinue tab so the bottom bar never covers the totals card or the last unit row. */
+  .content{padding-bottom:64px}
+  .p-inner{padding-bottom:78px}
+
+  /* Mobile menu modal — re-uses save-modal styling. */
+  .m-menu-modal .save-modal-body{display:flex;flex-direction:column;gap:9px}
+  .m-menu-cap-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0 8px;border-bottom:1px dashed var(--border)}
+  .m-menu-cap-input{display:block;width:120px}
+  .m-menu-btn{justify-content:flex-start}
+
+  /* Compact retinue rows — single-line summary, tap to edit. The full edit UI lives in the existing Unit Builder modal. */
+  .rrow{
+    padding:10px 12px;
+    cursor:pointer;
+    position:relative;
+  }
+  .rrow::after{
+    content:'›';
+    position:absolute;
+    right:14px;top:50%;
+    transform:translateY(-50%);
+    color:var(--text3);
+    font-size:1.4rem;
+    line-height:1;
+    pointer-events:none;
+  }
+  .rrow-top{
+    flex-direction:row;
+    align-items:center;
+    gap:8px;
+    padding-right:14px;
+  }
+  /* Hide the equipment / ability tag chips — they're in the edit modal */
+  .rrow-tags{display:none}
+  /* Hide individual edit/delete buttons — full-screen edit + a small delete tap target replaces them */
+  .rrow-btns{display:none}
+  /* Right column: only the points value */
+  .rrow-right{
+    width:auto;
+    flex:0 0 auto;
+    flex-direction:row;
+    align-items:center;
+    justify-content:flex-end;
+    gap:0;
+    padding-right:0;
+  }
+  .rrow-cost{
+    font-size:.92rem;
+    color:var(--amber2);
+    font-family:'Cinzel',serif;
+    font-weight:700;
+    white-space:nowrap;
+  }
+  /* Tighten the name line on mobile */
+  .rrow-name-line{gap:5px}
+  .rrow-name{font-size:.92rem}
+  .rrow-tier{font-size:.6rem}
+  .rrow-count{font-size:.78rem;color:var(--text2)}
+  /* CG assignment stays under the row but with smaller padding */
+  .rrow-cg{margin-top:6px;padding-top:6px;font-size:.74rem}
+  .rrow-cg-sel{font-size:.78rem;padding:4px 8px}
+
+  /* Slim retinue total card */
+  .retinue-total{padding:10px 14px;margin-top:10px}
+  .rt-pts{font-size:1.15rem}
+
+  /* Empty state — keep it compact since the drawer + bottom bar take screen real estate */
+  .empty-state{padding:30px 14px}
+  .empty-state h3{font-size:1rem}
+  .empty-state p{font-size:.9rem}
+}
+
+@media (max-width: 480px){
+  .m-bb-trigger-lbl{display:none}
+  .m-bb-trigger{padding:9px 12px;border-radius:50%;width:40px;height:40px;justify-content:center}
+  .m-bb-cnt{position:absolute;transform:translate(14px,-12px)}
+}
