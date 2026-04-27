@@ -425,6 +425,23 @@ function openSBUnitModal(fid){
   openUBNew(fid,first.unit,'Regular');
 }
 
+// Resolve a numeric points cost for a character: prefer the structured `points` field,
+// otherwise pull the first integer out of the points_note string.
+function charPoints(d){
+  if(typeof d?.points==='number')return d.points;
+  return parseInt((d?.points_note||'0').replace(/\D/g,''))||0;
+}
+
+// Default-pick the first "Must" choice for each equipment slot so a freshly-added
+// character isn't missing mandatory gear (matches what newRow does for warrior units).
+function applyCharDefaults(row, d){
+  row.selWeapon=(d?.weapon_must||[])[0]||null;
+  row.selOptWeapon=null;
+  row.selArmor=(d?.armour_options||[])[0]||null;
+  row.selShield=(d?.shield_options||[])[0]||null;
+  row.selMount=null; // mount is "May" for most characters — leave optional
+}
+
 function openSBCharModal(fid){
   fid=fid||pickAddFaction();
   if(!fid){alert('Add a Retinue first.');return;}
@@ -435,11 +452,12 @@ function openSBCharModal(fid){
   _ub={
     _isNew:true,_isChar:true,
     unit:d.name,faction_id:fid,faction_name:f?.faction_name||fid,
-    kind:'commander',tier:'Named',ptsPerW:parseInt((d.points_note||'0').replace(/\D/g,''))||0,
+    kind:'commander',tier:'Named',ptsPerW:charPoints(d),
     warriors:1,hasRabble:false,unitData:null,
     selWeapon:null,selOptWeapon:null,selArmor:null,selShield:null,selMount:null,
     selAbilities:[],selCGUpgrades:[],miscExtra:0,commandGroupRowId:null,commanderRowId:null,_openPanel:null,
   };
+  applyCharDefaults(_ub,d);
   document.getElementById('ubTitle').textContent='Add Character';
   renderUB();
   document.getElementById('ubOverlay').classList.add('open');
@@ -451,10 +469,10 @@ function ubChangeChar(charName){
   const d=chars.find(c=>c.name===charName);
   if(!d)return;
   _ub.unit=d.name;_ub.tier='Named';
-  _ub.ptsPerW=parseInt((d.points_note||'0').replace(/\D/g,''))||0;
+  _ub.ptsPerW=charPoints(d);
   _ub.unitData=null;_ub.kind='commander';_ub.warriors=1;
-  _ub.selWeapon=null;_ub.selOptWeapon=null;_ub.selArmor=null;_ub.selShield=null;_ub.selMount=null;
   _ub.selAbilities=[];_ub.selCGUpgrades=[];
+  applyCharDefaults(_ub,d);
   renderUB();
 }
 
@@ -856,21 +874,35 @@ function renderCharsBrowse(){
     return;
   }
   container.innerHTML=displayed.map((d,i)=>{
-    // Parse "• NAME: rule text\n• NAME2: rule text" into chips with the rule text on hover
-    const charChips=(d.character_abilities||'').split(/\n\s*•\s*/).map(s=>s.trim()).filter(Boolean).map(line=>{
-      const cleaned=line.replace(/^•\s*/,'');
-      const m=cleaned.match(/^([A-Z][A-Z'\s\-]+?)\s*[:—]\s*(.+)$/s);
-      if(m)return abilityChip(m[1].trim(),m[2].trim());
-      // Fallback: if we couldn't isolate name+rule, take the first ~40 chars as the name
-      const firstColon=cleaned.search(/[:—]/);
-      const name=firstColon>0?cleaned.slice(0,firstColon).trim():cleaned.slice(0,30).trim();
-      const rule=firstColon>0?cleaned.slice(firstColon+1).trim():'';
-      return abilityChip(name,rule);
-    }).join('');
+    // Prefer the structured per-character ability list (new) — fall back to the old text blob
+    // so older entries without struct still render chips.
+    const structAbis=Array.isArray(d.character_abilities_struct)?d.character_abilities_struct:null;
+    const charChips=structAbis
+      ? structAbis.map(a=>abilityChip(a.name,a.effect||'')).join('')
+      : (d.character_abilities||'').split(/\n\s*•\s*/).map(s=>s.trim()).filter(Boolean).map(line=>{
+          const cleaned=line.replace(/^•\s*/,'');
+          const m=cleaned.match(/^([A-Z][A-Z'\s\-]+?)\s*[:—]\s*(.+)$/s);
+          if(m)return abilityChip(m[1].trim(),m[2].trim());
+          const firstColon=cleaned.search(/[:—]/);
+          const name=firstColon>0?cleaned.slice(0,firstColon).trim():cleaned.slice(0,30).trim();
+          const rule=firstColon>0?cleaned.slice(firstColon+1).trim():'';
+          return abilityChip(name,rule);
+        }).join('');
+    // Stat strip from the structured profile
+    const stats=d.stats;
+    const statBlock=stats?`<div class="cbc-stats">
+      <span><b>Move</b> ${esc(stats.move||'-')}"</span>
+      <span><b>Attack</b> ${esc(stats.attack||'-')}</span>
+      <span><b>Defence</b> ${esc(stats.defence||'-')}</span>
+      <span><b>Morale</b> ${esc(stats.morale||'-')}</span>
+      <span><b>Shield</b> ${esc(stats.shield||'-')}</span>
+    </div>`:'';
+    const ptsLine=d.points!=null?`Points cost: ${d.points}`:(d.points_note||'');
     return `<div class="char-browse-card" id="cbc-${i}" onclick="if(!event.target.closest('.abi-chip'))this.classList.toggle('open')">
       <div class="cbc-name">♛ ${esc(d.name)}</div>
       <div class="cbc-retinues">${esc(d.retinues)}</div>
-      <div style="font-size:.74rem;color:var(--amber2);font-style:italic">${esc(d.points_note)}</div>
+      <div style="font-size:.74rem;color:var(--amber2);font-style:italic">${esc(ptsLine)}</div>
+      ${statBlock}
       ${charChips?`<div class="cbc-chips">${charChips}</div>`:''}
       <div class="cbc-body">
         <div style="margin-bottom:8px">${esc(d.profile_and_rules||'')}</div>
@@ -1156,12 +1188,16 @@ function doLoad(name){
   state.mercenaryCompany=s.mercenaryCompany||null;
   state.list=(s.list||[]).map(r=>{
     const uData=BW_DATA.units.find(u=>u.faction_id===r.faction_id&&u.unit===r.unit&&u.experience_tier===r.tier)||null;
+    // A row is a Named character if its tier is 'Named' and it isn't a custom commander.
+    // Older saves don't carry _isChar; backfill it here.
+    const _isChar=r._isChar||(r.tier==='Named'&&!r._isCustom);
     // Re-sync derived fields (hasRabble, kind) from the current data file — the saved list
     // may pre-date a data fix.
     return{
       ...r,
+      _isChar,
       unitData:uData,
-      kind:uData?(isCommanderUnit(uData)?'commander':uData.kind):r.kind,
+      kind:uData?(isCommanderUnit(uData)?'commander':uData.kind):(_isChar?'commander':r.kind),
       hasRabble:uData?!!uData.has_rabble:!!r.hasRabble,
       _openPanel:null,
     };
@@ -1217,8 +1253,26 @@ const BASE_STATS={Green:{atk:8,def:8,mor:8},Irregular:{atk:7,def:7,mor:7},Regula
 const EQ_MOD={'Padded':{move:-1,def:-1},'Mail':{move:-2,def:-2},'Small Shield':{shld:9},'Medium Shield':{shld:8},'Large Shield':{shld:7},'Horse':{move:3},'Barded Horse':{move:3,def:-1},'Pony':{move:2}};
 
 function calcStats(row){
-  const base=BASE_STATS[row.tier]||BASE_STATS.Regular;
-  let move=6,def=base.def,shld=null,atkMod=0;
+  // Named characters carry their own stat block from the supplement; equipment still
+  // adds Move/Defence/Shield modifiers. We trust the supplement that mandatory equipment
+  // is already factored into the listed stats.
+  const charEntry=row?._isChar?BW_DATA.dramatis.find(d=>d.name===row.unit):null;
+  const charStats=charEntry?.stats;
+  let move,baseDef,baseAtk,baseMor,baseShield,baseActions;
+  if(charStats){
+    move=parseInt(charStats.move)||6;
+    baseDef=parseInt((charStats.defence||'').replace(/\D/g,''))||5;
+    baseAtk=parseInt((charStats.attack||'').replace(/\D/g,''))||5;
+    baseMor=parseInt((charStats.morale||'').replace(/\D/g,''))||4;
+    baseShield=parseInt(charStats.shield)||null;
+    baseActions=parseInt(charStats.command)||3;
+  } else {
+    const base=BASE_STATS[row.tier]||BASE_STATS.Regular;
+    move=6;baseDef=base.def;baseAtk=base.atk;baseMor=base.mor;baseShield=null;
+    const isC=row.kind==='commander'||isCommanderUnit(row.unitData);
+    baseActions=isC?3:2;
+  }
+  let def=baseDef,shld=baseShield,atkMod=0;
   [row.selWeapon,row.selOptWeapon,row.selArmor,row.selShield,row.selMount].filter(Boolean).forEach(e=>{
     const m=EQ_MOD[e];if(!m)return;
     if(m.move!==undefined)move+=m.move;
@@ -1230,8 +1284,7 @@ function calcStats(row){
   if(ms.includes('+2 to Attack'))atkMod=-2;
   else if(ms.includes('+1 to Attack'))atkMod=-1;
   const note=wep&&ms?`${wep}: ${ms}`:'';
-  const isC=row.kind==='commander'||isCommanderUnit(row.unitData);
-  return{move:move+'"',attack:(base.atk+atkMod)+'+',defence:def+'+',shield:shld?shld+'+':'—',morale:base.mor+'+',actions:isC?3:2,note};
+  return{move:move+'"',attack:(baseAtk+atkMod)+'+',defence:def+'+',shield:shld?shld+'+':'—',morale:baseMor+'+',actions:baseActions,note};
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1311,8 +1364,24 @@ function renderUB(){
     mounts:['Horse','Barded Horse','Pony'],
     cgUpgrades:[],cgMustFrom:'',notes:[]
   };
-  const inherent=isCustom?[]:getInherent(_ub.unitData?.full_profile||'');
-  const parsed=isCustom?customParsed:getParsedEquipment(_ub,parseProfile(_ub.unitData?.full_profile||''),inherent);
+  // Named-character equipment + inherent come from the dramatis entry, not parseProfile
+  const charEntry=_ub._isChar?BW_DATA.dramatis.find(d=>d.name===_ub.unit):null;
+  const charParsed=charEntry?{
+    weaponsMust:charEntry.weapon_must||[],
+    weaponsMay:charEntry.weapon_may||[],
+    armor:charEntry.armour_options||[],
+    shields:charEntry.shield_options||[],
+    mounts:charEntry.mount_options||[],
+    cgUpgrades:charEntry.cg_upgrades||[],
+    cgMustFrom:charEntry.cg_must_from||'',
+    notes:charEntry.options_notes||[],
+  }:null;
+  const inherent=isCustom?[]
+    :_ub._isChar?(charEntry?.inherent_abilities||[])
+    :getInherent(_ub.unitData?.full_profile||'');
+  const parsed=isCustom?customParsed
+    :_ub._isChar?(charParsed||{weaponsMust:[],weaponsMay:[],armor:[],shields:[],mounts:[],cgUpgrades:[],cgMustFrom:'',notes:[]})
+    :getParsedEquipment(_ub,parseProfile(_ub.unitData?.full_profile||''),inherent);
   if(_ub.selOptWeapon&&!parsed.weaponsMay.includes(_ub.selOptWeapon))_ub.selOptWeapon=null;
   const isC=isCustom||_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
   const isNamed=_ub.tier==='Named';
@@ -1358,14 +1427,12 @@ function renderUB(){
     </div>`;
   }
 
-  // Stats
-  if(!isNamed){
-    h+=`<div class="ub-stats">
-      <div class="ub-stats-grid">${[['Move',stats.move],['Attack',stats.attack],['Defence',stats.defence],['Shield',stats.shield],['Morale',stats.morale],['Actions',stats.actions]].map(([l,v])=>
-        `<div class="ub-stat"><span class="ub-stat-lbl">${l}</span><span class="ub-stat-val" id="ubStat${l}">${v}</span></div>`).join('')}</div>
-      ${stats.note?`<div class="ub-stat-note" id="ubStatNote">${esc(stats.note)}</div>`:`<div id="ubStatNote"></div>`}
-    </div>`;
-  }
+  // Stats — show for everyone (named characters now have their own stat block from the supplement)
+  h+=`<div class="ub-stats">
+    <div class="ub-stats-grid">${[['Move',stats.move],['Attack',stats.attack],['Defence',stats.defence],['Shield',stats.shield],['Morale',stats.morale],['Actions',stats.actions]].map(([l,v])=>
+      `<div class="ub-stat"><span class="ub-stat-lbl">${l}</span><span class="ub-stat-val" id="ubStat${l}">${v}</span></div>`).join('')}</div>
+    ${stats.note?`<div class="ub-stat-note" id="ubStatNote">${esc(stats.note)}</div>`:`<div id="ubStatNote"></div>`}
+  </div>`;
 
   // Equipment
   if(!isNamed&&(parsed.weaponsMust.length||parsed.armor.length||parsed.mounts.length||parsed.shields.length)){
@@ -1398,11 +1465,22 @@ function renderUB(){
     </div>`;
   }
 
-  // Abilities
-  const abils=getAvailableAbilities(fid);
+  // Abilities — characters use their own pre-defined ability list (no generic Universal /
+  // Retinue picker). Costs are from the supplement, parsed as integers.
+  const abils=_ub._isChar
+    ? (charEntry?.character_abilities_struct||[]).map(a=>({
+        name:(a.name||'').toUpperCase(),
+        cost:parseInt(a.cost)||0,
+        effect:a.effect||'',
+        source:'character',
+      }))
+    : getAvailableAbilities(fid);
   const selA=_ub.selAbilities||[];
   const selN=new Set(selA.map(a=>a.name));
-  const lim=isCustom?(parseInt(_ub.customRank)||2):(isC?getAbilityLimit(_ub.unit):0);
+  // Named characters have a fixed pre-set ability list — no slot limit on top of that.
+  const lim=isChar?(charEntry?.character_abilities_struct?.length||99)
+    :isCustom?(parseInt(_ub.customRank)||2)
+    :(isC?getAbilityLimit(_ub.unit):0);
   // Mercenary Company Abilities count as additional Inherent — they don't fill a Purchasable slot.
   const slotFilling=selA.filter(a=>!MERC_COMPANY_ABILITIES.has(a.name.toUpperCase())).length;
   const atLim=isC&&slotFilling>=lim;
@@ -1451,9 +1529,14 @@ function renderUB(){
       // and shouldn't be re-purchasable. Strip "(Regulars)"-style qualifiers before comparing.
       const inhSet=new Set(inherent.map(n=>n.replace(/\s*\([^)]*\)\s*$/,'').trim().toUpperCase()));
       const visible=abils.filter(a=>(isC||!COMMANDER_ONLY_ABIS.has(a.name.toUpperCase()))&&!inhSet.has(a.name.toUpperCase()));
+      const character=visible.filter(a=>a.source==='character');
       const retinue=visible.filter(a=>a.source==='retinue');
       const universal=visible.filter(a=>a.source==='generic');
       let out='';
+      if(character.length){
+        out+=`<div class="ub-abi-sub">♛ ${esc(_ub.unit)} — Command Abilities</div>
+          <div class="ub-abi-grid">${character.map(renderAbi).join('')}</div>`;
+      }
       if(retinue.length){
         out+=`<div class="ub-abi-sub">⚜ ${esc(facLabel(fid))} Retinue Abilities</div>
           <div class="ub-abi-grid">${retinue.map(renderAbi).join('')}</div>`;
@@ -1623,7 +1706,7 @@ function ubTogAbi(name,cost,ck){
   const changesWeaponChoices=/^Weapon Choices?$/i.test(name);
   const isC=_ub._isCustom||_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
   if(COMMANDER_ONLY_ABIS.has(name.toUpperCase())&&!isC)return; // warriors can't take commander-only
-  const lim=_ub._isCustom?(parseInt(_ub.customRank)||2):(isC?getAbilityLimit(_ub.unit):999);
+  const lim=_ub._isChar?999:_ub._isCustom?(parseInt(_ub.customRank)||2):(isC?getAbilityLimit(_ub.unit):999);
   const isMercCompany=MERC_COMPANY_ABILITIES.has(name.toUpperCase());
   if(ck){
     const restriction=checkAbilityRestriction(name,_ub);
@@ -1645,7 +1728,7 @@ function refreshAbilityGating(){
   if(!_ub)return;
   const body=document.getElementById('ubAbiBody');if(!body)return;
   const isC=_ub._isCustom||_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
-  const lim=_ub._isCustom?(parseInt(_ub.customRank)||2):(isC?getAbilityLimit(_ub.unit):999);
+  const lim=_ub._isChar?999:_ub._isCustom?(parseInt(_ub.customRank)||2):(isC?getAbilityLimit(_ub.unit):999);
   const selN=new Set((_ub.selAbilities||[]).map(a=>a.name));
   // Merc Company Abilities don't fill a slot.
   const slotFilling=(_ub.selAbilities||[]).filter(a=>!MERC_COMPANY_ABILITIES.has(a.name.toUpperCase())).length;
@@ -1756,8 +1839,16 @@ function renderRetinue(){
 function renderRow(row){
   const isC=row.kind==='commander'||isCommanderUnit(row.unitData);
   const tot=rowTotal(row);
-  const parsed=parseProfile(row.unitData?.full_profile||'');
-  const inherent=getInherent(row.unitData?.full_profile||'');
+  const isChar=row.tier==='Named'&&!row._isCustom;
+  // Named characters source their profile/inherent from BW_DATA.dramatis instead of unitData
+  const charEntry=isChar?BW_DATA.dramatis.find(d=>d.name===row.unit):null;
+  const parsed=isChar&&charEntry?{
+    weaponsMust:charEntry.weapon_must||[],weaponsMay:charEntry.weapon_may||[],
+    armor:charEntry.armour_options||[],shields:charEntry.shield_options||[],
+    mounts:charEntry.mount_options||[],cgUpgrades:charEntry.cg_upgrades||[],
+    cgMustFrom:charEntry.cg_must_from||'',notes:[],
+  }:parseProfile(row.unitData?.full_profile||'');
+  const inherent=isChar&&charEntry?(charEntry.inherent_abilities||[]):getInherent(row.unitData?.full_profile||'');
   const TC={Green:'tier-green',Irregular:'tier-irregular',Regular:'tier-regular',Veteran:'tier-veteran',Named:'tier-named'};
   const tcls=TC[row.tier]||'tier-irregular';
   const eqs=[row.selWeapon,row.selOptWeapon,row.selArmor,row.selShield,row.selMount].filter(Boolean);
@@ -1779,7 +1870,7 @@ function renderRow(row){
       ${cgCands.map(c=>`<option value="${c.id}" ${c.id===row.commandGroupRowId?'selected':''}>${esc(c.unit)} (${esc(c.tier)}, ×${c.warriors||1})</option>`).join('')}
     </select>`:`<span class="rrow-cg-hint">${cgEmptyHint}</span>`}
     </div>`:'';
-  return `<div class="rrow ${isC?'cmd-row':'war-row'}" onclick="rrowTap(event,${row.id})">
+  return `<div class="rrow ${isC?'cmd-row':'war-row'}${isChar?' char-row':''}" onclick="rrowTap(event,${row.id})">
     <div class="rrow-top">
       <div class="rrow-left">
         <div class="rrow-name-line">

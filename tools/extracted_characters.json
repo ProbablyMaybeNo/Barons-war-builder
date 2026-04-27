@@ -1,0 +1,797 @@
+[
+  {
+    "title": "ROBIN HOOD",
+    "label": "ROBIN HOOD",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "7+",
+      "morale": "2+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 47\nInherent Abilities: Commander, Inspire, Life in the Forest, Misdirection, Silver Arrow, Weapon Choice\nWeapon, Must choose one: Hand weapon, Falchion, Sword\nWeapon, May choose one: Bow**\nArmour, Must choose one: Padded\nShield, May* choose one: Small Shield, Medium Shield (* unless equipped with Bow)\nCommand Group upgrades: Signaller OR Merry Men (see Merry Men rules)\nCommand Group must be made from: Outlaws, Cutthroats\nNote: ** If Robin is equipped with a Bow, the Command Group must be made from Outlaw Bowmen.",
+    "abilities": [
+      {
+        "name": "INSPIRE",
+        "effect": "Commander only. Any friendly Group within 6\" of Robin Hood (including the Command Group but not Robin) may gain a free Attack OR Defence dice in each Combat Action.",
+        "cost": "2"
+      },
+      {
+        "name": "LIFE IN THE FOREST",
+        "effect": "Commander only. The Command Group and friendly Infantry Groups which activate within 6\" are not affected by Difficult Terrain.",
+        "cost": "2"
+      },
+      {
+        "name": "MISDIRECTION",
+        "effect": "Commander only. May only be purchased by a Wolfshead who is the Retinue Leader. After deployment is complete, the Outlaw player may nominate a single enemy Group and immediately give it a Move of up to 8\". This Move is not modified by the Group's base movement or armour, but it is modified for Terrain. The Group must remain within its legitimate deployment zone. It cannot be placed in Impassable terrain and can only be placed where it could have used a Move to reach.",
+        "cost": "2"
+      },
+      {
+        "name": "SILVER ARROW",
+        "effect": "Commander only. When Robin uses a Shoot Action, he gains 1 Attack dice. In addition, Robin and his Command Group can move 3\" and shoot with a Bow even if at Long range.",
+        "cost": "3"
+      }
+    ]
+  },
+  {
+    "title": "MAID MARIAN",
+    "label": "MAID MARIAN",
+    "stats": {
+      "move": "6",
+      "attack": "6+",
+      "defence": "7+",
+      "morale": "2+",
+      "shield": "2",
+      "command": ""
+    },
+    "options_text": "Points cost: 31\nInherent Abilities: Commander, Calming Presence, Courtesy, Friends of the Forest, Inspire, Weapon Choice\nWeapon, Must choose one: Hand weapon, Sword\nWeapon, May choose one: Bow*\nCommand Group upgrades: Signaller OR Merry Men\nCommand Group must be made from: Outlaws\nNote: * If Maid Marian is equipped with a Bow, the Command Group must be made from Outlaw Bowmen.",
+    "abilities": [
+      {
+        "name": "CALMING PRESENCE",
+        "effect": "Commander only. During the Housekeeping Phase any friendly Group within 6\" of Maid Marian which is able to reduce its Morale Penalties removes an additional Morale Penalty.",
+        "cost": "2"
+      },
+      {
+        "name": "COURTESY",
+        "effect": "Commander only. Maid Marian and her Command Group may never declare a Charge. Any enemy Group with Chivalry must pass a Morale check in order to Charge Maid Marian's Command Group. If Maid Marian is removed as a casualty, she is automatically taken prisoner. Place her model in base contact with a Warrior from the Group which captured her. Maid Marian is treated as a mobile Objective (see The Barons' War rulebook p.97). The enemy Group may not Run or Charge while escorting her. If a friendly Warrior moves into base contact, Maid Marian will be rescued. She is treated as though she had moved off the table - she plays no further part in the game but is not considered a casualty.",
+        "cost": "0"
+      },
+      {
+        "name": "FRIENDS OF THE FOREST",
+        "effect": "Commander only. Friendly Infantry Groups within 6\" count as being in Soft Cover against Ranged attacks.",
+        "cost": "3"
+      },
+      {
+        "name": "INSPIRE",
+        "effect": "Commander only. Any friendly Group within 6\" of Maid Marian (including the Command Group but not Maid Marian) may gain a free Attack OR Defence dice in each Combat Action.",
+        "cost": "2"
+      }
+    ]
+  },
+  {
+    "title": "LITTLE JOHN",
+    "label": "LITTLE JOHN",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "7+",
+      "morale": "3+",
+      "shield": "1",
+      "command": ""
+    },
+    "options_text": "Points cost: 26\nInherent Abilities: Merry Men, Steal from the Rich, Weapons Master; Little John counts as a Pennant\nWeapon, Must choose one: Two Handed Weapon\nArmour, May choose one: Padded\nCommand Group must be made from: Outlaws, Cutthroats",
+    "abilities": [
+      {
+        "name": "STEAL FROM THE RICH",
+        "effect": "\"Valuable, you say?\" If directly contesting an objective with an enemy Command Group, it always counts as being held by this Commander.",
+        "cost": "1"
+      },
+      {
+        "name": "WEAPONS MASTER",
+        "effect": "Commander only. If Little John Charges, he generates an additional Attack dice in Melee when in base contact with an enemy Warrior. There is no benefit if he Attacks Back.",
+        "cost": "2"
+      }
+    ]
+  },
+  {
+    "title": "FRIAR TUCK",
+    "label": "FRIAR TUCK",
+    "stats": {
+      "move": "6",
+      "attack": "6+",
+      "defence": "7+",
+      "morale": "4+",
+      "shield": "1",
+      "command": ""
+    },
+    "options_text": "Points cost: 17\nInherent Abilities: Devoted Faith, Merry Men, Weapon Choice; Friar Tuck counts as a Priest\nWeapon, Must choose one: Hand weapon, Sword\nWeapon, May choose one: Bow*\nArmour, May choose one: Padded\nCommand Group must be made from: Outlaws\nNote: * If Friar Tuck is equipped with a Bow, his Command Group must be made from Outlaw Bowmen.",
+    "abilities": [
+      {
+        "name": "DEVOTED FAITH",
+        "effect": "Commander only. Friar Tuck and his Command Group ignore their Morale Penalties when making Morale checks.",
+        "cost": "3"
+      }
+    ]
+  },
+  {
+    "title": "ALLAN-A-DALE",
+    "label": "ALLAN-A-DALE",
+    "stats": {
+      "move": "6",
+      "attack": "6+",
+      "defence": "7+",
+      "morale": "4+",
+      "shield": "1",
+      "command": ""
+    },
+    "options_text": "Points cost: 17\nInherent Abilities: Inspiring Presence, Merry Men, Weapon Choice; Allan-a-Dale counts as a Musician\nWeapon, Must choose one: Hand weapon, Sword\nWeapon, May choose one: Bow*\nArmour, May choose one: Padded\nCommand Group must be made from: Outlaws, Cutthroats\nNote: * If equipped with a Bow, the Command Group must be made from Outlaw Bowmen.",
+    "abilities": [
+      {
+        "name": "INSPIRING PRESENCE",
+        "effect": "Commander only. If Allan-a-Dale and his Command Group win a Melee Combat, all friendly Groups within 6\" and LoS reduce their Morale Penalties by 1 at the end of that Combat Action.",
+        "cost": "2"
+      }
+    ]
+  },
+  {
+    "title": "WILL SCARLETT",
+    "label": "WILL SCARLETT",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "7+",
+      "morale": "4+",
+      "shield": "1",
+      "command": ""
+    },
+    "options_text": "Points cost: 17\nInherent Abilities: Live by the Sword, Merry Men, Open Up\nWeapon, Must choose one: Hand weapon, Sword\nArmour, May choose one: Padded\nShield, May choose one: Small Shield, Medium Shield\nCommand Group must be made from: Outlaws, Cutthroats",
+    "abilities": [
+      {
+        "name": "LIVE BY THE SWORD",
+        "effect": "May re-roll one Melee Attack Dice against Groups who are not Knights (or their equivalent).",
+        "cost": "1"
+      },
+      {
+        "name": "OPEN UP",
+        "effect": "Opponents in base contact with Will Scarlett do not receive any bonuses for a Defence Action or Reaction in Melee Combat.",
+        "cost": "1"
+      }
+    ]
+  },
+  {
+    "title": "PHILIPPE MARC",
+    "label": "PHILIPPE MARC",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "7+",
+      "morale": "3+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 44\nInherent Abilities: Commander, Chivalry, Cruel Lord, Dishonourable, Steal from the Rich\nWeapon, Must choose one: Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician, Priest\nCommand Group must be made from: Knights, Mounted Knights, Serjeants or Mounted Serjeants",
+    "abilities": [
+      {
+        "name": "CRUEL LORD",
+        "effect": "Commander only. If a Group makes a Combat Action or Reaction thanks to a Command Action from the Cruel Lord, the Group may re-roll one Attack dice. However, if a group fails a Morale Check to receive an Order from the Commander, they take an immediate casualty.",
+        "cost": "2"
+      },
+      {
+        "name": "DISHONOURABLE",
+        "effect": "Commander only. The Commander and his Command Group does not need to take a Morale check to charge a Group which is not Knights (or equivalent Warriors deemed to be Knights) if they are not the closest target. The Commander is treated as having Chivalry for the purposes of Abilities, Traits etc.",
+        "cost": "1"
+      },
+      {
+        "name": "STEAL FROM THE RICH",
+        "effect": "\"Valuable, you say?\" If directly contesting an objective with an enemy Command Group, it always counts as being held by this Commander.",
+        "cost": "1"
+      }
+    ]
+  },
+  {
+    "title": "KING JOHN",
+    "label": "KING JOHN",
+    "stats": {
+      "move": "6",
+      "attack": "5+",
+      "defence": "7+",
+      "morale": "4+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 44\nInherent Abilities: Chivalry, Commander, Cruel King, Cunning Tactician, Fear of Treachery, To the King!\nWeapon, Must choose one: Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician, Priest\nCommand Group must be made from: Knights or Mounted Knights",
+    "abilities": [
+      {
+        "name": "CRUEL KING",
+        "effect": "Commander only. May only be chosen by the Retinue Leader. If a Group makes a Combat Action or Reaction thanks to a Command Action from the Cruel King, it gains an Attack dice. If it makes a Defend Action or Reaction, it gains a Defence dice. However, if a group fails a Morale Check to receive an Order from the Commander, it takes an immediate casualty.",
+        "cost": "3"
+      },
+      {
+        "name": "CUNNING TACTICIAN",
+        "effect": "Commander only. Once per round the Commander may make a free Command Action. This is in addition to the Commander's normal Actions. It may be used to give an Action, even if the Commander is not the Retinue Leader.",
+        "cost": "4"
+      },
+      {
+        "name": "FEAR OF TREACHERY",
+        "effect": "Commander only. If King John's Command Group has more Morale Penalties than Warriors, King John may not declare Charges. He must activate in the Compulsory Action phase and use a Move Action to move as far away as possible from any enemy Groups.",
+        "cost": "0"
+      },
+      {
+        "name": "TO THE KING!",
+        "effect": "Commander only. The Command Group gains +1 to its Defence rolls as long as the Commander is still alive.",
+        "cost": "3"
+      }
+    ]
+  },
+  {
+    "title": "WILLIAM MARSHAL (REGENT)",
+    "label": "WILLIAM MARSHAL",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "7+",
+      "morale": "2+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 43\nInherent Abilities: Commander, Chivalry, For the Realm, Justiciar, The Greatest Knight\nWeapon, Must choose one: Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician, Priest\nCommand Group must be made from: Knights or Mounted Knights",
+    "abilities": [
+      {
+        "name": "FOR THE REALM",
+        "effect": "Commander only. This Commander and his Command Group never become Weary. They may still only use two Actions (not counting Command Actions).",
+        "cost": "3"
+      },
+      {
+        "name": "JUSTICIAR",
+        "effect": "Commander only. May use a Command Action on the same Group twice during the same round. This could mean that the Group takes three Actions rather than the normally-permitted two. The Group will become Weary as normal.",
+        "cost": "3"
+      },
+      {
+        "name": "THE GREATEST KNIGHT",
+        "effect": "Commander only. Groups within 6\" automatically pass their Order check to take a Command Action from this Commander.",
+        "cost": "1"
+      }
+    ]
+  },
+  {
+    "title": "WILLIAM MARSHAL (YOUNG)",
+    "label": "WILLIAM MARSHAL",
+    "stats": {
+      "move": "6",
+      "attack": "3+",
+      "defence": "6+",
+      "morale": "2+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 47\nInherent Abilities: Commander, Chivalry, For the Realm, The Greatest Knight, Tourney Knight\nWeapon, Must choose one: Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician, Priest\nCommand Group must be made from: Knights or Mounted Knights",
+    "abilities": [
+      {
+        "name": "TOURNEY KNIGHT",
+        "effect": "Commander only. In Melee Combat where the Commander is in base contact with the enemy, he rolls an additional Attack dice.",
+        "cost": "3"
+      }
+    ]
+  },
+  {
+    "title": "HUBERT DE BURGH",
+    "label": "HUBERT DE BURGH",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "7+",
+      "morale": "2+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 44\nInherent Abilities: Commander, Chivalry, Justiciar, Resolute Defender, Within Reach\nWeapon, Must choose one: Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician, Priest\nCommand Group must be made from: Knights or Mounted Knights",
+    "abilities": [
+      {
+        "name": "JUSTICIAR",
+        "effect": "Commander only. May use a Command Action on the same Group twice during the same round. This could mean that the Group takes three Actions rather than the normally-permitted two. The Group will become Weary as normal.",
+        "cost": "3"
+      },
+      {
+        "name": "RESOLUTE DEFENDER",
+        "effect": "Commander only. Once per round the Commander's Group or another Group within 6\" and LoS may make a Defend Action (not a Reaction) as a free Action.",
+        "cost": "1"
+      },
+      {
+        "name": "WITHIN REACH",
+        "effect": "Commander only. In Melee combat, only half the enemy Warriors in base contact with the Commander may direct Attack dice at him (round up).",
+        "cost": "1"
+      }
+    ]
+  },
+  {
+    "title": "WILLIAM LONGESP\u00c9E",
+    "label": "WILLIAM LONGESP\u00c9E",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "6+",
+      "morale": "3+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 47\nInherent Abilities: Commander, Chivalry, Battle Cry, Charismatic Leader, Inspiring Presence\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician, Priest\nCommand Group must be made from: Knights or Mounted Knights\nWeapon, Must choose one: Sword, Mace, Falchion",
+    "abilities": [
+      {
+        "name": "BATTLE CRY",
+        "effect": "Commander only. Once per game, at the start of the round the Commander may shout their battle cry. The Commander must take a Morale check. If successful, all Groups within Command range ignore their Morale Penalties when taking Morale checks for the remainder of the round. Place a marker by the Group to indicate this. The Group loses this bonus if it loses a Combat or becomes Broken.",
+        "cost": "3"
+      },
+      {
+        "name": "CHARISMATIC LEADER",
+        "effect": "Commander only. Once per round, a Group may re-roll a single failed Order check to receive a Command Action from this Commander.",
+        "cost": "2"
+      },
+      {
+        "name": "INSPIRING PRESENCE",
+        "effect": "Commander only. If this Commander and his Command Group win a Melee Combat, all friendly Groups within 6\" and LoS reduce their Morale Penalties by 1 at the end of that Combat Action.",
+        "cost": "2"
+      }
+    ]
+  },
+  {
+    "title": "WILLIAM DE WARENNE",
+    "label": "WILLIAM DE WARENNE",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "7+",
+      "morale": "3+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 43\nInherent Abilities: Commander, Chivalry, Charismatic Leader, Old Campaigner\nWeapon, Must choose one: Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician, Priest\nCommand Group must be made from: Knights or Mounted Knights",
+    "abilities": [
+      {
+        "name": "CHARISMATIC LEADER",
+        "effect": "Commander only. Once per round, a Group may re-roll a single failed Order check to receive a Command Action from this Commander.",
+        "cost": "2"
+      },
+      {
+        "name": "EXPERIENCED TACTICIAN",
+        "effect": "Commander only. May only be chosen by the Retinue Leader. When determining Initiative, the Retinue Leader rolls an additional d10 (without spending a Command Action) provided their Command Group has no Morale Penalties.",
+        "cost": "+2"
+      },
+      {
+        "name": "OLD CAMPAIGNER",
+        "effect": "Commander only. The first time the Command Group is Charged in Melee each round, it may make a free Attack Back Reaction. This does not count towards the Group's maximum Actions per Round.",
+        "cost": "3"
+      }
+    ]
+  },
+  {
+    "title": "PETER DES ROCHES",
+    "label": "PETER DES ROCHES",
+    "stats": {
+      "move": "6",
+      "attack": "6+",
+      "defence": "7+",
+      "morale": "3+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 47\nInherent Abilities: Commander, Devoted Faith, Prelate, Wily Commander\nWeapon, Must choose one: Sword, Mace\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician\nCommand Group must be made from: Knights or Mounted Knights",
+    "abilities": [
+      {
+        "name": "DEVOTED FAITH",
+        "effect": "Commander only. The Commander and his Command Group ignore their Morale Penalties when making Morale checks.",
+        "cost": "3"
+      },
+      {
+        "name": "PRELATE",
+        "effect": "Commander only. May not be combined with a Priest Command Group upgrade. Friendly Groups with a Warrior within 12\" and LoS of Peter des Roches (including the Command Group) ignore one Morale Penalty for all purposes.",
+        "cost": "8"
+      },
+      {
+        "name": "WILY COMMANDER",
+        "effect": "Commander only. Peter des Roches may use a Command Action to Order a friendly Group equipped with Crossbows to shoot a second time. This does not force the shooting to count as at short range.",
+        "cost": "3"
+      }
+    ]
+  },
+  {
+    "title": "FAULKES DE BREAUT\u00c9",
+    "label": "FAULKES DE BREAUT\u00c9",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "7+",
+      "morale": "2+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 43\nInherent Abilities: Commander, Bloodlust, Dishonourable, Fear, King's Justice\nWeapon, Must choose one: Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician, Priest\nCommand Group must be made from: Knights or Mounted Knights, Serjeants or Mounted Serjeants",
+    "abilities": [
+      {
+        "name": "BLOODLUST",
+        "effect": "Commander only. The Command Group is subject to Compulsory Action. When it activates, if an enemy Group is within LoS and Charge range, it must declare a Combat Action to Charge that Group, unless it passes a Morale check to take a different action. When determining the Strength of the Charge, the Command Group rolls an extra d6 and chooses the highest result.",
+        "cost": "1"
+      },
+      {
+        "name": "DISHONOURABLE",
+        "effect": "Commander only. The Commander and his Command Group does not need to take a Morale check to charge a Group which is not Knights (or equivalent Warriors deemed to be Knights) if they are not the closest target. The Commander is treated as having Chivalry for the purposes of Abilities, Traits etc.",
+        "cost": "1"
+      },
+      {
+        "name": "FEAR",
+        "effect": "Opponents must pass a Morale Check to Charge Faulkes and his Command Group.",
+        "cost": "1"
+      },
+      {
+        "name": "KING'S JUSTICE",
+        "effect": "Commander only. When in base contact, any of the Commander's Melee Attack dice which score a natural 0 count as two successful hits rather than one. Make Defence and Shield rolls against the original and additional hits.",
+        "cost": "2"
+      }
+    ]
+  },
+  {
+    "title": "WILLIAM OF CASSINGHAM",
+    "label": "WILLIAM OF CASSINGHAM",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "7+",
+      "morale": "2+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 46\nInherent Abilities: Commander, Cruelty, For the Realm, Inspire, Watchers in the Woods\nWeapon, Must choose one: Battle Axe, Sword, Falchion\nArmour, Must choose one: Padded, Mail\nShield, May choose one: Medium Shield\nMount, May choose one: Horse\nCommand Group upgrades: Signaller, Priest\nCommand Group must be made from: Outlaws, Cutthroats, Outlaw Serjeants, Mounted Outlaw Serjeants",
+    "abilities": [
+      {
+        "name": "CRUELTY",
+        "effect": "Commander only. When the Commander makes Melee Attacks, enemy Warriors in base contact must re-roll one successful Defence dice from the Commander's Attack Dice pool.",
+        "cost": "1"
+      },
+      {
+        "name": "FOR THE REALM",
+        "effect": "Commander only. This Commander and his Command Group never become Weary. They may still only use two Actions (not counting Command Actions).",
+        "cost": "3"
+      },
+      {
+        "name": "INSPIRE",
+        "effect": "Commander only. Any friendly Group within 6\" of the Commander (including the Command Group but not the Commander) may gain a free Attack OR Defence dice in each Combat Action.",
+        "cost": "2"
+      },
+      {
+        "name": "WATCHERS IN THE WOOD",
+        "effect": "Commander only. May only be taken by a Wolfshead who is the Retinue Leader. When determining Initiative, if a friendly Regular or Veteran Group is in Area Terrain and in LoS of the Wolfshead, the Outlaw player adds +2 to their Initiative roll.",
+        "cost": "2"
+      }
+    ]
+  },
+  {
+    "title": "KING PHILIP II",
+    "label": "KING PHILIP",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "7+",
+      "morale": "2+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 80\nInherent Abilities: Commander, Chivalry, Diligent, Schemer, To the King!\nWeapon, Must choose one: Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman OR Oriflamme, Musician, Priest\nCommand Group must be made from: Knights or Mounted Knights",
+    "abilities": [
+      {
+        "name": "DILIGENT",
+        "effect": "Commander only. Any friendly Groups within Command range of Philip may re-roll Morale and Order checks which score a natural 1.",
+        "cost": "2"
+      },
+      {
+        "name": "SCHEMER",
+        "effect": "Commander only. Once per round, when it is King Philip's turn to activate a Group, King Philip may make a Morale check. If the check is passed, there is no activation and the sequence of play immediately passes to the opposing player. This does not count as choosing to pass.",
+        "cost": "2"
+      },
+      {
+        "name": "TO THE KING!",
+        "effect": "Commander only. The Command Group gains +1 to its Defence rolls as long as the Commander is still alive.",
+        "cost": "3"
+      },
+      {
+        "name": "ORIFLAMME UPGRADE",
+        "effect": "BANNER - King Philip's Command range is extended to 12\", measured from the bannerman.\nINSPIRE - Any friendly Group within 12\" of the Banner (including the Command Group) may gain a free Attack OR Defence dice in each Combat Action.\nORIFLAMME - All friendly Groups with line of sight to the Oriflamme's banner bearer roll an additional d6 when determining Strength of the Charge and pick the best result. If the bannerman is removed as a casualty, all Groups with LoS to the banner take a Morale Penalty.",
+        "cost": "14"
+      }
+    ]
+  },
+  {
+    "title": "PRINCE LOUIS",
+    "label": "PRINCE LOUIS",
+    "stats": {
+      "move": "6",
+      "attack": "3+",
+      "defence": "7+",
+      "morale": "2+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 46\nInherent Abilities: Commander, Chivalry, Excommunicate, For the Lion!, Inspiring Presence, The Lion\nWeapon, Must choose one: Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician, Priest* (* unless Louis has Excommunicate)\nCommand Group must be made from: Knights or Mounted Knights",
+    "abilities": [
+      {
+        "name": "EXCOMMUNICATE",
+        "effect": "Commander only. Louis' Command Group may not include a Priest.",
+        "cost": "0"
+      },
+      {
+        "name": "FOR THE LION!",
+        "effect": "Commander only. If a group Charges as a result of a Command Action from this Commander, they gain +1 to their Attack rolls.",
+        "cost": "1"
+      },
+      {
+        "name": "INSPIRING PRESENCE",
+        "effect": "Commander only. If this Commander and his Command Group win a Melee Combat, all friendly Groups within 6\" reduce their Morale Penalties by 1 at the end of that Combat Action.",
+        "cost": "2"
+      },
+      {
+        "name": "THE LION",
+        "effect": "Commander only. When determining the Strength of the Charge, the Command Group rolls an extra d6 and chooses the highest result.",
+        "cost": "1"
+      }
+    ]
+  },
+  {
+    "title": "LOUIS VIII",
+    "label": "LOUIS VIII",
+    "stats": {
+      "move": "6",
+      "attack": "3+",
+      "defence": "7+",
+      "morale": "2+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 49\nInherent Abilities: Commander, Chivalry, For the Lion!, Inspiring Presence, The Lion, To the King!\nWeapon, Must choose one: Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician, Priest\nCommand Group must be made from: Knights or Mounted Knights",
+    "abilities": [
+      {
+        "name": "TO THE KING!",
+        "effect": "Commander only. The Command Group gains +1 to its Defence rolls as long as the Commander is still alive.",
+        "cost": "3"
+      }
+    ]
+  },
+  {
+    "title": "KING ALEXANDER II",
+    "label": "KING ALEXANDER",
+    "stats": {
+      "move": "6",
+      "attack": "5+",
+      "defence": "7+",
+      "morale": "4+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 45\nInherent Abilities: Commander, Chivalry, Charismatic Leader, Fox Cub, Inspiring Presence, To the King!\nWeapon, Must choose one: Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician, Priest\nCommand Group must be made from: Knights or Mounted Knights",
+    "abilities": [
+      {
+        "name": "CHARISMATIC LEADER",
+        "effect": "Commander only. Once per round, a Group may re-roll a single failed Order check to receive a Command Action from this Commander.",
+        "cost": "2"
+      },
+      {
+        "name": "FOX CUB",
+        "effect": "Commander only. If King Alexander loses a Melee combat, his Command Group is not Forced Back. Instead it makes a Regroup Move. It must move at least as many inches as it would have been Forced Back.",
+        "cost": "2"
+      },
+      {
+        "name": "INSPIRING PRESENCE",
+        "effect": "Commander only. Every time this Commander wins a Melee Combat, all friendly Groups within 6\" and LoS reduce their Morale Penalties by 1.",
+        "cost": "2"
+      },
+      {
+        "name": "TO THE KING!",
+        "effect": "Commander only. The Command Group gains +1 to its Defence rolls as long as the Commander is still alive.",
+        "cost": "3"
+      }
+    ]
+  },
+  {
+    "title": "STEPHEN LANGTON",
+    "label": "STEPHEN LANGTON",
+    "stats": {
+      "move": "6",
+      "attack": "7+",
+      "defence": "7+",
+      "morale": "2+",
+      "shield": "2",
+      "command": ""
+    },
+    "options_text": "Points cost: 33\nInherent Abilities: Commander, Divine Intervention, Pious Air\nWeapon, Must choose one: Sword, Mace\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman OR Sacred Banner, Musician\nCommand Group must be made from: Knights or Mounted Knights",
+    "abilities": [
+      {
+        "name": "DIVINE INTERVENTION",
+        "effect": "Commander only. Broken groups within Command range at the start of the round are not subject to Compulsory Activation (i.e. do not have to activate to Rally in the Compulsory Activation phase). Instead they are activated during the New Actions phase. The Broken Group is still subject to Compulsory Action and must attempt to Rally when it does activate.",
+        "cost": "3"
+      },
+      {
+        "name": "PIOUS AIR",
+        "effect": "Commander only. May not be combined with Prelate or a Priest Command Group upgrade. Any friendly Group within 6\" and LoS of archbishop Stephen (including his Command Group) ignores its Morale Penalties when making Morale checks.",
+        "cost": "8"
+      },
+      {
+        "name": "SACRED BANNER UPGRADE",
+        "effect": "BANNER - The Commander's Command range is extended to 12\", measured from the bannerman.\nINSPIRE - Any friendly Group within 12\" of the Banner (including the Command Group) may gain a free Attack OR Defence dice in each Combat Action.\nSACRED BANNER - During the Housekeeping phase, all Groups with LoS to the Sacred Banner bearer which are able to reduce their Morale Penalties remove an additional Morale Penalty. If the bannerman is removed as a casualty, all Groups with LoS to the banner take a Morale Penalty.",
+        "cost": "14"
+      }
+    ]
+  },
+  {
+    "title": "ROBERT FITZWALTER",
+    "label": "ROBERT FITZWALTER",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "7+",
+      "morale": "2+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 43\nInherent Abilities: Commander, Chivalry, Charismatic Leader, Inspired Leader\nWeapon, Must choose one: Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician, Priest\nCommand Group must be made from: Knights or Mounted Knights (Feudal European) OR Outlaw Serjeants or Mounted Outlaw Serjeants (Outlaw)",
+    "abilities": [
+      {
+        "name": "CHARISMATIC LEADER",
+        "effect": "Commander only. Once per round, a Group may re-roll a single failed Order check to receive a Command Action from this Commander.",
+        "cost": "2"
+      },
+      {
+        "name": "INSPIRED LEADER",
+        "effect": "Commander only. All friendly warriors with Line of Sight to this Commander gain +1 to Morale checks. This does stack with other bonuses.",
+        "cost": "2"
+      },
+      {
+        "name": "REBEL",
+        "effect": "Commander only. May only be purchased by the Retinue Leader. Groups in Command range and LoS of the Retinue Leader (including the Command Group) count their opponents as having one more Morale Penalty than they currently have when calculating Morale Melee Modifier.",
+        "cost": "+3"
+      }
+    ]
+  },
+  {
+    "title": "THOMAS OF PERCHE",
+    "label": "THOMAS DE PERCHE",
+    "stats": {
+      "move": "6",
+      "attack": "5+",
+      "defence": "7+",
+      "morale": "5+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 39\nInherent Abilities: Commander, Chivalry, Excommunicate, Glory Seekers, Momentum\nWeapon, Must choose one: Sword, Mace, Falchion, Horseman's Pick (if mounted)\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician, Priest* (* except with Excommunicate)\nCommand Group must be made from: Knights or Mounted Knights",
+    "abilities": [
+      {
+        "name": "EXCOMMUNICATE",
+        "effect": "Commander only. Thomas' Command Group may not include a Priest.",
+        "cost": "0"
+      },
+      {
+        "name": "GLORY SEEKERS",
+        "effect": "Commander only. Count Thomas and his Command Group ignore the negative effects of Morale Penalties in Melee Combat.",
+        "cost": "2"
+      },
+      {
+        "name": "MOMENTUM",
+        "effect": "Commander only. The first time each round that Thomas and his Command Group wins a Melee Combat, once the Combat Action is completed, the Group immediately activates again (regardless of the sequence of play) and takes a free Action to make a Compulsory Combat Action. If the Group can Charge the enemy Group which it defeated, it must do so. Otherwise it must Charge the nearest enemy Group within LoS and Charge range. Once this activation is complete, it is the opposing player's turn to activate a Group. The Group becomes Weary as soon as the free Action is triggered. The free Action does not count towards the Group's maximum Actions.",
+        "cost": "3"
+      }
+    ]
+  },
+  {
+    "title": "FULK FITZWARIN",
+    "label": "FULK FITZWARIN",
+    "stats": {
+      "move": "6",
+      "attack": "5+",
+      "defence": "7+",
+      "morale": "3+",
+      "shield": "2",
+      "command": ""
+    },
+    "options_text": "Points cost: 29\nInherent Abilities: Commander, All or Nothing, All to Gain\nWeapon, Must choose one: Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Musician, Priest\nCommand Group composition: Feudal European: Knights or Mounted Knights, Serjeants or Mounted Serjeants. Outlaw: Outlaw Serjeants or Mounted Outlaw Serjeants.",
+    "abilities": [
+      {
+        "name": "ALL OR NOTHING",
+        "effect": "Commander only. Groups within Command range which are holding an Objective will never become Broken. They can still be Forced Back.",
+        "cost": "2"
+      },
+      {
+        "name": "ALL TO GAIN",
+        "effect": "Commander only. Groups which are Inspired by Fulk gain 2 Attack dice but never gain bonus Defence dice.",
+        "cost": "2"
+      },
+      {
+        "name": "MARCHER",
+        "effect": "Commander only. May only be chosen by the Retinue Leader. Up to 50% of the Retinue's points may be spent on Groups (but not Commanders) from the Barons' War: Welsh list. Welsh Groups may use the Retinue Leader's Morale and Command Actions, but suffer a -1 penalty to Order checks when using those Command Actions.",
+        "cost": "+2"
+      }
+    ]
+  },
+  {
+    "title": "EUSTACE THE MONK",
+    "label": "EUSTACE THE MONK",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "7+",
+      "morale": "2+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 44\nInherent Abilities: Commander, All to Gain, Cruelty, Hefty Ransom\nWeapon, Must choose one: Battle Axe, Falchion, Sword\nArmour, Must choose one: Padded, Mail\nShield, May choose one: Small Shield, Medium Shield\nMount, May choose one: Horse\nCommand Group upgrades: Banner, Musician, Priest, Old Hand\nCommand Group must be made from: Cutthroats or Mounted Serjeants (either Outlawed or Mercenary)",
+    "abilities": [
+      {
+        "name": "ALL TO GAIN",
+        "effect": "Commander only. May only be chosen by an Outlawed Noble (mounted or dismounted). Groups which are Inspired by the Commander gain 2 Attack dice but never gain bonus Defence dice.",
+        "cost": "2"
+      },
+      {
+        "name": "CRUELTY",
+        "effect": "Commander only. In Melee Combat where the Commander is in base contact with an enemy, the target must re-roll one successful Defence Dice from the Commander's Attack Dice pool.",
+        "cost": "2"
+      },
+      {
+        "name": "HEFTY RANSOM",
+        "effect": "Commander only. Once per game, if Eustace the Monk would be removed as a casualty, roll a d10. On a result of 6+ he is able to ransom his life and remains in play.",
+        "cost": "2"
+      }
+    ]
+  },
+  {
+    "title": "OWAIN AP GRUFFYDD",
+    "label": "OWAIN AP GRUFFYDD",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "7+",
+      "morale": "3+",
+      "shield": "2",
+      "command": ""
+    },
+    "options_text": "Points cost: 29\nInherent Abilities: Commander, Calming Presence\nWeapon, Must choose one: Battle Axe, Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Pennant, Musician, Priest\nCommand Group must be made from: Welsh Knights (mounted or dismounted), Welsh Nobles (mounted or dismounted)",
+    "abilities": [
+      {
+        "name": "CALMING PRESENCE",
+        "effect": "Commander only. During the Housekeeping Phase any friendly Group within 6\" which is able to reduce its Morale Penalties removes an additional Morale Penalty.",
+        "cost": "2"
+      },
+      {
+        "name": "PENTEULU",
+        "effect": "Commander only. May only be purchased by a Commander who is not the Retinue Leader. A Retinue may only include one Penteulu. Owain may use one of his Actions to order a group to take an Action, even though he is not the Retinue Leader. If Rhys Ieuanc is removed from play, Owain automatically passes his Morale check to take over command unless he is Broken.",
+        "cost": "+4"
+      }
+    ]
+  },
+  {
+    "title": "RHYS IEUANC",
+    "label": "RHYS IEUANC",
+    "stats": {
+      "move": "6",
+      "attack": "4+",
+      "defence": "7+",
+      "morale": "2+",
+      "shield": "3",
+      "command": ""
+    },
+    "options_text": "Points cost: 45\nInherent Abilities: Commander, Battle Cry, Challenger, Unflinching\nWeapon, Must choose one: Battle Axe, Sword, Mace, Falchion\nArmour, Must choose one: Mail\nShield, Must choose one: Medium Shield, Large Shield\nMount, May choose one: Horse, Barded Horse\nCommand Group upgrades: Bannerman, Bard, Priest\nCommand Group must be made from: Welsh Knights (mounted or dismounted), Welsh Nobles (mounted or dismounted)",
+    "abilities": [
+      {
+        "name": "BATTLE CRY",
+        "effect": "Commander only. Once per game, at the start of the round the Commander may shout their battle cry. The Commander must take a Morale check. If successful, all Groups within Command range ignore their Morale Penalties when taking Morale checks for the remainder of the round. Place a marker by the Group to indicate this. This bonus is lost if the Group loses a Combat or becomes Broken.",
+        "cost": "3"
+      },
+      {
+        "name": "CHALLENGER",
+        "effect": "Commander only. Rhys' Command Group is subject to Compulsory Action. If the Commander is able to Charge an enemy Commander, he must do so, unless he can pass a Morale check. This only applies the first time the Commander's Group activates each round.",
+        "cost": "1"
+      },
+      {
+        "name": "UNFLINCHING",
+        "effect": "Commander only. If he is the Retinue Leader, Rhys Ieuanc does not take Morale Penalties when friendly Groups are removed from play.",
+        "cost": "3"
+      }
+    ]
+  }
+]

@@ -291,10 +291,17 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
 .bc-tier{font-family:'Cinzel',serif;font-size:.68rem;padding:2px 8px;border-radius:2px;border:1px solid var(--border2);color:var(--text2)}
 .bc-faction{font-size:.72rem;color:var(--text3)}
 
-/* Named chars browse */
-.char-browse-card{background:var(--card);border:1px solid var(--border2);border-left:3px solid var(--amber);border-radius:5px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s}
-.char-browse-card:hover{border-color:var(--amber)}
-.char-browse-card.open{border-color:var(--amber)}
+/* Named chars browse — inverted scheme (amber base, red detail) to match the in-list character cards */
+.char-browse-card{
+  background:linear-gradient(180deg,rgba(255,213,74,.10) 0%,rgba(255,213,74,.04) 100%);
+  border:1px solid var(--amber);
+  border-left:4px solid var(--red);
+  border-radius:5px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s;
+}
+.char-browse-card:hover{border-color:var(--amber2);box-shadow:0 0 14px rgba(255,213,74,.15)}
+.char-browse-card.open{border-color:var(--amber2);box-shadow:0 0 18px rgba(255,213,74,.22)}
+.cbc-stats{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0;font-family:'Cinzel',serif;font-size:.7rem;color:var(--amber2)}
+.cbc-stats b{color:var(--red);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-right:3px;font-size:.6rem}
 .cbc-name{font-family:'Cinzel',serif;font-size:.88rem;font-weight:700;color:var(--amber2)}
 .cbc-retinues{font-size:.76rem;color:var(--text3);margin:2px 0}
 .cbc-body{display:none;margin-top:10px;font-size:.82rem;color:var(--text);line-height:1.6;white-space:pre-line}
@@ -464,6 +471,24 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
 .rrow{background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:9px 13px;transition:border-color .15s}
 .rrow:hover{border-color:var(--blue2)}
 .rrow.cmd-row{border-left:4px solid var(--amber)}.rrow.war-row{border-left:4px solid var(--blue2)}
+/* Named-character cards — inverted scheme (amber base, red detail) so they stand out from
+   warrior commanders. Ross asked for "yellow card with red details". */
+.rrow.char-row{
+  background:linear-gradient(180deg,rgba(255,213,74,.12) 0%,rgba(255,213,74,.05) 100%);
+  border:1px solid var(--amber);
+  border-left:4px solid var(--red);
+  box-shadow:0 0 14px rgba(255,213,74,.08);
+}
+.rrow.char-row:hover{border-color:var(--amber2);box-shadow:0 0 16px rgba(255,213,74,.18)}
+.rrow.char-row .rrow-name{color:var(--amber2);text-shadow:0 0 8px rgba(255,213,74,.25)}
+.rrow.char-row .rrow-name::before{content:'♛ ';color:var(--red)}
+.rrow.char-row .rrow-cost{color:var(--red);text-shadow:0 0 6px rgba(255,75,67,.18)}
+.rrow.char-row .rrow-tier{background:rgba(255,75,67,.18);color:#ffd9d4;border:1px solid var(--red)}
+.rrow.char-row .r-tag-e{background:rgba(255,213,74,.1);color:var(--amber2);border-color:var(--amber)}
+.rrow.char-row .r-tag-cg{background:rgba(255,75,67,.12);color:var(--redlt);border-color:rgba(255,75,67,.32)}
+.rrow.char-row .r-tag-a{background:rgba(255,213,74,.06);color:var(--amber2);border-color:rgba(255,213,74,.32)}
+.rrow.char-row .r-tag-ai{background:rgba(255,75,67,.05);color:var(--redlt);border-color:rgba(255,75,67,.22)}
+.rrow.char-row::after{color:var(--red)!important}
 .rrow-top{display:flex;align-items:flex-start;gap:9px}
 .rrow-left{flex:1;min-width:0}
 .rrow-name-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px}
