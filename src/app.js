@@ -1522,6 +1522,7 @@ function ubChangeTier(newTier){
       const el=document.getElementById('ubStat'+l);
       if(el)el.textContent=[stats.move,stats.attack,stats.defence,stats.shield,stats.morale,stats.actions][i];
     });
+    refreshAbilityGating();
     return;
   }
   const fid=_ub.faction_id;
@@ -1536,6 +1537,7 @@ function ubChangeTier(newTier){
     if(el)el.textContent=[stats.move,stats.attack,stats.defence,stats.shield,stats.morale,stats.actions][i];
   });
   const sn=document.getElementById('ubStatNote');if(sn)sn.textContent=stats.note||'';
+  refreshAbilityGating();
 }
 
 function ubEquip(field,val){
@@ -1548,8 +1550,10 @@ function ubEquip(field,val){
     if(el)el.textContent=[stats.move,stats.attack,stats.defence,stats.shield,stats.morale,stats.actions][i];
   });
   const sn=document.getElementById('ubStatNote');if(sn)sn.textContent=stats.note||'';
-  // Re-render equip section if shield lock changed (two-handed)
+  // Re-render equip section if shield lock changed (two-handed) — full re-render also refreshes ability gating.
+  // For other equipment fields, just re-sync ability gating since predicates depend on weapon/armor/mount.
   if(field==='selWeapon')renderUB();
+  else refreshAbilityGating();
 }
 
 function ubTogCG(name,ck){
@@ -1574,19 +1578,35 @@ function ubTogAbi(name,cost,ck){
   }
   else _ub.selAbilities=_ub.selAbilities.filter(a=>a.name!==name);
   if(changesWeaponChoices){renderUB();return;}
-  const selN=new Set(_ub.selAbilities.map(a=>a.name));
-  const atLim=_ub.selAbilities.length>=lim;
-  document.querySelectorAll('#ubAbiBody .ub-abi-it').forEach(it=>{
+  refreshAbilityGating();
+  ubUpdateCost();
+}
+
+// Re-sync the disabled / checked state of every ability chip against the current _ub.
+// Called whenever a predicate input changes (ability toggle, equipment, tier).
+function refreshAbilityGating(){
+  if(!_ub)return;
+  const body=document.getElementById('ubAbiBody');if(!body)return;
+  const isC=_ub._isCustom||_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
+  const lim=_ub._isCustom?(parseInt(_ub.customRank)||2):(isC?getAbilityLimit(_ub.unit):999);
+  const selN=new Set((_ub.selAbilities||[]).map(a=>a.name));
+  const atLim=isC&&(_ub.selAbilities||[]).length>=lim;
+  body.querySelectorAll('.ub-abi-it').forEach(it=>{
     const inp=it.querySelector('input');if(!inp)return;
     const m=(inp.getAttribute('onchange')||'').match(/'([^']+)'/);
     const n=m?m[1]:'';
-    const isCk=selN.has(n);const isDis=!isCk&&atLim;
+    const isCk=selN.has(n);
+    const cmdOnly=COMMANDER_ONLY_ABIS.has(n.toUpperCase());
+    const slotBlocked=isC&&!isCk&&atLim;
+    const cmdBlocked=cmdOnly&&!isC&&!isCk;
+    const restriction=checkAbilityRestriction(n,_ub);
+    const restrictionBlocked=restriction!==true&&!isCk;
+    const isDis=slotBlocked||cmdBlocked||restrictionBlocked;
     it.className=`ub-abi-it${isCk?' ck':''}${isDis?' dis':''}`;
     inp.checked=isCk;inp.disabled=isDis;
   });
   const limEl=document.getElementById('ubAbiLim');
-  if(limEl){limEl.textContent=`${_ub.selAbilities.length} / ${lim}`;limEl.className=atLim?'abi-full':'abi-ok';}
-  ubUpdateCost();
+  if(limEl){limEl.textContent=`${(_ub.selAbilities||[]).length} / ${lim}`;limEl.className=atLim?'abi-full':'abi-ok';}
 }
 
 function ubUpdateCost(){
