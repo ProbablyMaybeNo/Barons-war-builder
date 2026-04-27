@@ -99,6 +99,64 @@ function parseProfile(profile){
   return res;
 }
 
+// ── Ability restriction predicates ───────────────────────────────────────────
+// Each entry: name -> (row) => true if allowed, OR a short string explaining why disabled.
+function _isMounted(r){return /^mounted /i.test(r.unit||'')||!!r.selMount}
+function _isKnight(r){return /knight/i.test(r.unit||'')}
+function _hasReachWeapon(r){const w=(r.selWeapon||'')+' '+(r.selOptWeapon||'');return /spear|bill|polearm|dane axe/i.test(w)}
+function _hasBow(r){const w=(r.selWeapon||'')+' '+(r.selOptWeapon||'');return /\bbow\b|elm bow/i.test(w)}
+function _hasCrossbow(r){const w=(r.selWeapon||'')+' '+(r.selOptWeapon||'');return /crossbow/i.test(w)}
+function _hasMissile(r){const w=(r.selWeapon||'')+' '+(r.selOptWeapon||'');return /\bbow\b|crossbow|javelin|sling|elm bow/i.test(w)}
+function _isRegOrVet(r){return r.tier==='Regular'||r.tier==='Veteran'}
+function _isGreenOrIrr(r){return r.tier==='Green'||r.tier==='Irregular'}
+function _isInfantry(r){return !_isMounted(r)}
+function _isUnarmoured(r){return !r.selArmor||/none/i.test(r.selArmor)}
+
+const ABILITY_RESTRICTIONS={
+  // Mounted Knights only
+  'CLOSE RANKS':r=>(_isMounted(r)&&_isKnight(r))||'Mounted Knights only',
+  'RIDE DOWN':r=>(_isMounted(r)&&_isKnight(r))||'Mounted Knights only',
+  'COUNTER CHARGE':r=>(_isMounted(r)&&_isKnight(r))||'Mounted Knights only',
+  // Mounted Commander
+  'EXPERIENCED KNIGHT':r=>_isMounted(r)||'Mounted Commander only',
+  // Spear / Bill / Polearm / Dane Axe (REACH)
+  'BRACE':r=>(_isInfantry(r)&&_hasReachWeapon(r))||'Infantry with Spear or Bill only',
+  'SKILLED SPEARMEN':r=>(_isInfantry(r)&&_hasReachWeapon(r))||'Dismounted Spear/Bill only',
+  'SPEAR HEDGE':r=>(_isInfantry(r)&&_hasReachWeapon(r))||'Dismounted Spear/Bill only',
+  'WALL OF SPINES':r=>_hasReachWeapon(r)||'Spear or Bill only',
+  // Bow / Crossbow
+  'ETTRICK ARCHERS':r=>_hasBow(r)||'Bow-equipped only',
+  'MASTER FLETCHER':r=>(_hasBow(r)||_hasCrossbow(r))||'Bow or Crossbow only',
+  'MEASURED SHOT':r=>(_hasBow(r)||_hasCrossbow(r))||'Bow or Crossbow only',
+  'MARKSMAN':r=>_hasCrossbow(r)||'Crossbow-equipped only',
+  'CRACK SHOT':r=>(_hasBow(r)||_hasCrossbow(r))||'Bow or Crossbow only',
+  // Any missile + infantry
+  'HIDDEN FOES':r=>(_isInfantry(r)&&_hasMissile(r))||'Infantry with missile weapon only',
+  'VOLLEY':r=>(_isUnarmoured(r))||'Unarmoured Group only',
+  // Tier
+  'BORN FOR WAR':r=>_isRegOrVet(r)||'Regular or Veteran only',
+  'OLD SOLDIERS':r=>_isRegOrVet(r)||'Regular or Veteran only',
+  'PROFESSIONAL':r=>_isRegOrVet(r)||'Regular or Veteran only',
+  'GUTTER THUG':r=>_isGreenOrIrr(r)||'Green or Irregular only',
+  'RABBLE':r=>_isGreenOrIrr(r)||'Green or Irregular only',
+  // Unarmoured / dismounted
+  'SUREFOOTED':r=>_isUnarmoured(r)||'Unarmoured only',
+  'NIMBLE':r=>_isUnarmoured(r)||'Unarmoured only',
+  'SKIRMISHER':r=>_isUnarmoured(r)||'Unarmoured only',
+  'MASTERS OF THE WILD':r=>_isInfantry(r)||'Dismounted only',
+  // Mercenary Company Abilities — already gated retinue-side, but flag tier for Brabançon
+  'BRABANCON':r=>_isRegOrVet(r)||'Regular or Veteran only',
+  // Gascon-specific
+  'EVADE':r=>/horsem|gascon/i.test(r.unit||'')||'Gascon Horsemen only',
+  // Javelin throwers
+  'JAVELINMEN':r=>/javelin/i.test((r.selWeapon||'')+(r.selOptWeapon||''))||'Javelin-armed only',
+};
+function checkAbilityRestriction(name,row){
+  const pred=ABILITY_RESTRICTIONS[(name||'').toUpperCase()];
+  if(!pred)return true;
+  return pred(row);
+}
+
 // Lookup rule text for an ability name (handles "(Regulars)" qualifiers and the inherent glossary)
 function getAbilityRule(name){
   const base=(name||'').replace(/\s*\([^)]*\)\s*$/,'').trim().toUpperCase();
@@ -1179,12 +1237,14 @@ function switchToTab(tab){
 // Commander-only ability names (from rulebook)
 const COMMANDER_ONLY_ABIS = new Set([
   'CRUELTY','EXPERIENCED KNIGHT','EXPERIENCED TACTICIAN','FORMIDABLE','INSPIRED LEADER','LUCKY',
-  'PIOUS AIR','PRELATE','REBEL','RIDE DOWN','ROBUST','STEAL FROM THE RICH',
-  'VETERAN CRUSADER','CLOSE RANKS','COUNTER CHARGE','ALL TO GAIN',
+  'PIOUS AIR','PRELATE','REBEL','ROBUST','STEAL FROM THE RICH',
+  'VETERAN CRUSADER','ALL TO GAIN',
   'FRIENDS OF THE FOREST','DEERHOUNDS','JUSTICIAR','MARCHER','MILANESE STEEL',
   'CHALLENGER','CRUEL LORD','LORD OF THE SOUTH','MOUNTAIN MIST','NIFER','PATRON OF CULTURE',
   'PENTEULU','SCHOLAR','SURPRISE RAID','TEULU','EMBOLDENED','BURGEMEESTER',
   'CRACK SHOT','MELT AWAY'
+  // Note: CLOSE RANKS, RIDE DOWN, COUNTER CHARGE removed — supplement allows them on
+  // warrior Groups (mounted Knights). Their restriction is handled by ABILITY_RESTRICTIONS.
 ]);
 
 function renderUB(){
@@ -1315,22 +1375,41 @@ function renderUB(){
       <div class="ub-inh-list">
         ${inhDetails.map(d=>`<div class="ub-inh-item"><div class="ub-inh-item-name">${esc(d.name)}</div>${d.effect?`<div class="ub-inh-item-effect">${esc(d.effect)}</div>`:`<div class="ub-inh-item-effect ub-inh-item-effect-empty">Faction trait — see Rules tab.</div>`}</div>`).join('')}
       </div>`:''}
-    ${isC?`<div class="ub-abi-sub">Purchasable Abilities <span class="ub-abi-legend">✦ Universal &nbsp;⚜ Retinue &nbsp;⚔ Commander only</span></div>
-      <div class="ub-abi-lim">Slots: <span class="${atLim?'abi-full':'abi-ok'}" id="ubAbiLim">${selA.length} / ${lim}</span></div>`:''}
-    <div class="ub-abi-grid">
-      ${abils.filter(a=>isC||!COMMANDER_ONLY_ABIS.has(a.name.toUpperCase())).map(a=>{
+    ${isC?`<div class="ub-abi-lim">Slots: <span class="${atLim?'abi-full':'abi-ok'}" id="ubAbiLim">${selA.length} / ${lim}</span></div>`:''}
+    ${(()=>{
+      const renderAbi=a=>{
         const ck=selN.has(a.name);
         const cmdOnly=COMMANDER_ONLY_ABIS.has(a.name.toUpperCase());
-        const dis=(isC&&!ck&&atLim)||(cmdOnly&&!isC);
-        const tk=LITE_MODE?'':regTip(esc(a.name),'',a.effect||'');
+        const slotBlocked=isC&&!ck&&atLim;
+        const cmdBlocked=cmdOnly&&!isC&&!ck;
+        const restriction=checkAbilityRestriction(a.name,_ub);
+        const restrictionBlocked=restriction!==true&&!ck;
+        const dis=slotBlocked||cmdBlocked||restrictionBlocked;
+        let blockReason='';
+        if(restrictionBlocked)blockReason=restriction;
+        else if(cmdBlocked)blockReason='Commander only';
+        else if(slotBlocked)blockReason='Ability slot full';
+        const tk=LITE_MODE?'':regTip(esc(a.name),'',(a.effect||'')+(blockReason?`\n\n[Disabled: ${blockReason}]`:''));
         const tipAttrs=LITE_MODE?'':`data-tkey="${tk}" onmouseenter="showTipKey(this.dataset.tkey)" onmouseleave="clearTip()"`;
-        const srcIcon=a.source==='generic'?'<span class="ub-an-src" title="Universal Ability">✦</span>':'<span class="ub-an-src ret" title="Retinue-Specific Ability">⚜</span>';
-        return `<label class="ub-abi-it ${ck?'ck':''} ${dis?'dis':''}" ${tipAttrs}>
+        return `<label class="ub-abi-it ${ck?'ck':''} ${dis?'dis':''}" ${tipAttrs} ${blockReason?`title="Disabled: ${esc(blockReason)}"`:''}>
           <input type="checkbox" ${ck?'checked':''} ${dis?'disabled':''} onchange="ubTogAbi('${esc(a.name)}',${a.cost||0},this.checked)">
-          <span class="ub-an">${srcIcon} ${esc(a.name)}${cmdOnly?' <span class="ub-an-cmd" title="Commander only">⚔</span>':''}</span>
+          <span class="ub-an">${esc(a.name)}${cmdOnly?' <span class="ub-an-cmd" title="Commander only">⚔</span>':''}</span>
           <span class="ub-ac">+${a.cost||0}</span></label>`;
-      }).join('')}
-    </div>
+      };
+      const visible=abils.filter(a=>isC||!COMMANDER_ONLY_ABIS.has(a.name.toUpperCase()));
+      const retinue=visible.filter(a=>a.source==='retinue');
+      const universal=visible.filter(a=>a.source==='generic');
+      let out='';
+      if(retinue.length){
+        out+=`<div class="ub-abi-sub">⚜ ${esc(facLabel(fid))} Retinue Abilities</div>
+          <div class="ub-abi-grid">${retinue.map(renderAbi).join('')}</div>`;
+      }
+      if(universal.length){
+        out+=`<div class="ub-abi-sub">✦ Universal Abilities <span class="ub-abi-legend">⚔ Commander only</span></div>
+          <div class="ub-abi-grid">${universal.map(renderAbi).join('')}</div>`;
+      }
+      return out;
+    })()}
     ${!isC?`<div class="amber-box" style="margin-top:8px;font-size:.73rem">Ability purchasing is managed at retinue level for warrior groups.</div>`:''}
   </div>`;
 
@@ -1487,7 +1566,12 @@ function ubTogAbi(name,cost,ck){
   const isC=_ub._isCustom||_ub.kind==='commander'||isCommanderUnit(_ub.unitData);
   if(COMMANDER_ONLY_ABIS.has(name.toUpperCase())&&!isC)return; // warriors can't take commander-only
   const lim=_ub._isCustom?(parseInt(_ub.customRank)||2):(isC?getAbilityLimit(_ub.unit):999);
-  if(ck){if(isC&&_ub.selAbilities.length>=lim)return;if(!_ub.selAbilities.find(a=>a.name===name))_ub.selAbilities.push({name,cost});}
+  if(ck){
+    const restriction=checkAbilityRestriction(name,_ub);
+    if(restriction!==true)return; // restriction not met — block selection
+    if(isC&&_ub.selAbilities.length>=lim)return;
+    if(!_ub.selAbilities.find(a=>a.name===name))_ub.selAbilities.push({name,cost});
+  }
   else _ub.selAbilities=_ub.selAbilities.filter(a=>a.name!==name);
   if(changesWeaponChoices){renderUB();return;}
   const selN=new Set(_ub.selAbilities.map(a=>a.name));
