@@ -1696,6 +1696,7 @@ function ubChangeUnit(newUnit){
   const parsed=parseProfile(uData.full_profile||'');
   _ub._isCustom=false;_ub.customRank=undefined;
   _ub.unit=newUnit;_ub.tier=uData.experience_tier;_ub.ptsPerW=uData.pts_per_warrior;_ub.unitData=uData;
+  _ub.hasRabble=!!uData.has_rabble;
   _ub.kind=isCommanderUnit(uData)?'commander':(uData.kind||'warrior');
   _ub.warriors=_ub.kind==='commander'?1:5;
   _ub.selWeapon=parsed.weaponsMust[0]||null;_ub.selOptWeapon=null;
@@ -1766,6 +1767,7 @@ function ubChangeTier(newTier){
   const uData=BW_DATA.units.find(u=>u.faction_id===fid&&u.unit===_ub.unit&&u.experience_tier===newTier);
   if(!uData)return;
   _ub.tier=newTier;_ub.ptsPerW=uData.pts_per_warrior;_ub.unitData=uData;
+  _ub.hasRabble=!!uData.has_rabble;
   ubUpdateCost();
   // Update stat block only
   const stats=calcStats(_ub);
