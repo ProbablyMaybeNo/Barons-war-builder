@@ -1,4 +1,4 @@
-﻿import { BW_DATA, EQUIP, CG_UPGRADES } from '../data/game-data.js?v=20260427d-chars-eq';
+﻿import { BW_DATA, EQUIP, CG_UPGRADES } from '../data/game-data.js?v=20260427e-customstats';
 
 // Lite mode hides rules text (ability descriptions, faction trait tooltips, inherent ability details).
 // Activated by serving from /lite/, by ?mode=lite on the script URL, or by <body class="lite-mode">.
@@ -1191,11 +1191,25 @@ function doLoad(name){
     // A row is a Named character if its tier is 'Named' and it isn't a custom commander.
     // Older saves don't carry _isChar; backfill it here.
     const _isChar=r._isChar||(r.tier==='Named'&&!r._isCustom);
+    // Older custom-commander saves used customRank 1 (= Tier 1) which no longer exists in
+    // the Knight Commander Generator. Promote them to Lord (2) and seed empty stat increases.
+    let customRank=r.customRank;
+    let customStatIncreases=r.customStatIncreases;
+    let ptsPerW=r.ptsPerW;
+    if(r._isCustom){
+      customRank=customRank===3?3:2;
+      if(!customStatIncreases||typeof customStatIncreases!=='object')customStatIncreases={attack:0,defence:0,morale:0};
+      // Re-anchor base cost to the canonical profile so older saves that hand-typed a
+      // different value get updated automatically.
+      const profile=CUSTOM_PROFILES[customRank]||CUSTOM_PROFILES[2];
+      if(!ptsPerW||ptsPerW===0)ptsPerW=profile.basePts;
+    }
     // Re-sync derived fields (hasRabble, kind) from the current data file — the saved list
     // may pre-date a data fix.
     return{
       ...r,
       _isChar,
+      customRank,customStatIncreases,ptsPerW,
       unitData:uData,
       kind:uData?(isCommanderUnit(uData)?'commander':uData.kind):(_isChar?'commander':r.kind),
       hasRabble:uData?!!uData.has_rabble:!!r.hasRabble,
@@ -1252,6 +1266,23 @@ function init(){
 const BASE_STATS={Green:{atk:8,def:8,mor:8},Irregular:{atk:7,def:7,mor:7},Regular:{atk:6,def:6,mor:6},Veteran:{atk:5,def:5,mor:5}};
 const EQ_MOD={'Padded':{move:-1,def:-1},'Mail':{move:-2,def:-2},'Small Shield':{shld:9},'Medium Shield':{shld:8},'Large Shield':{shld:7},'Horse':{move:3},'Barded Horse':{move:3,def:-1},'Pony':{move:2}};
 
+// Knight Commander Generator (Custom Commanders) — see King John supplement, T247/T249.
+// Both profiles start at Move 6", Attack 7+, Defence 7+, Morale 7+; Baron has 3 Actions, Lord 2.
+// The player has a fixed pool of stat-upgrade points to spend on increases. Each increase
+// is one step better (lower target). Max stats = ATK 3+, DEF 5+, MOR 2+.
+const CUSTOM_PROFILES={
+  2:{name:'Lord (Tier 2)',basePts:17,maxUpgrades:5,abilitySlots:2,baseActions:2},
+  3:{name:'Baron (Tier 3)',basePts:27,maxUpgrades:8,abilitySlots:3,baseActions:3},
+};
+const STAT_UPGRADE_COST={attack:2,defence:2,morale:1};
+const STAT_MAX_INCREASES={attack:4,defence:2,morale:5};  // 7+ -> 3+/5+/2+
+function customUpgradeBudgetUsed(inc){
+  if(!inc)return 0;
+  return (inc.attack||0)*STAT_UPGRADE_COST.attack
+       +(inc.defence||0)*STAT_UPGRADE_COST.defence
+       +(inc.morale||0)*STAT_UPGRADE_COST.morale;
+}
+
 function calcStats(row){
   // Named characters carry their own stat block from the supplement; equipment still
   // adds Move/Defence/Shield modifiers. We trust the supplement that mandatory equipment
@@ -1266,6 +1297,17 @@ function calcStats(row){
     baseMor=parseInt((charStats.morale||'').replace(/\D/g,''))||4;
     baseShield=parseInt(charStats.shield)||null;
     baseActions=parseInt(charStats.command)||3;
+  } else if(row?._isCustom){
+    // Knight Commander Generator: both Lord and Baron start at 6"/7+/7+/7+; player buys
+    // stat increases out of a fixed budget.
+    const profile=CUSTOM_PROFILES[parseInt(row.customRank)]||CUSTOM_PROFILES[2];
+    const inc=row.customStatIncreases||{};
+    move=6;
+    baseAtk=7-(inc.attack||0);
+    baseDef=7-(inc.defence||0);
+    baseMor=7-(inc.morale||0);
+    baseShield=null;
+    baseActions=profile.baseActions;
   } else {
     const base=BASE_STATS[row.tier]||BASE_STATS.Regular;
     move=6;baseDef=base.def;baseAtk=base.atk;baseMor=base.mor;baseShield=null;
@@ -1413,17 +1455,48 @@ function renderUB(){
              oninput="ubSet('warriors',parseInt(this.value)||1)"></div>`:''}
   </div>`;
 
-  // Custom commander extra fields: name + tier rank
+  // Custom commander extra fields: name + Knight Commander Generator profile
   if(isCustom){
+    const rank=parseInt(_ub.customRank)||2;
+    const profile=CUSTOM_PROFILES[rank]||CUSTOM_PROFILES[2];
+    if(!_ub.customStatIncreases)_ub.customStatIncreases={attack:0,defence:0,morale:0};
+    const inc=_ub.customStatIncreases;
+    const used=customUpgradeBudgetUsed(inc);
+    const remaining=profile.maxUpgrades-used;
     h+=`<div class="ub-sels two">
       <div class="ub-field"><label>Name</label>
         <input type="text" class="ub-inp" value="${esc(_ub.unit)}" placeholder="Custom Commander"
                oninput="ubChangeCustomName(this.value)"></div>
-      <div class="ub-field"><label>Commander Tier (no Tier 3)</label>
+      <div class="ub-field"><label>Profile</label>
         <select class="ub-sel" onchange="ubChangeCustomRank(this.value)">
-          <option value="1" ${_ub.customRank===1?'selected':''}>Tier 1 (1 ability)</option>
-          <option value="2" ${_ub.customRank===2?'selected':''}>Tier 2 (2 abilities)</option>
+          <option value="2" ${rank===2?'selected':''}>Lord (Tier 2) — 17 pts, 2 abilities, 5 upgrades</option>
+          <option value="3" ${rank===3?'selected':''}>Baron (Tier 3) — 27 pts, 3 abilities, 8 upgrades</option>
         </select></div>
+    </div>`;
+    // Stat-upgrade picker. Each row: stat name, current target, +/- steppers, cost-per-step.
+    const statRow=(key,label)=>{
+      const lvl=inc[key]||0;
+      const max=STAT_MAX_INCREASES[key];
+      const cost=STAT_UPGRADE_COST[key];
+      const cur=7-lvl;
+      const canMinus=lvl>0;
+      const canPlus=lvl<max&&(remaining>=cost);
+      return `<div class="cs-row">
+        <span class="cs-lbl">${label}</span>
+        <button class="cs-btn" ${canMinus?'':'disabled'} onclick="ubAdjustCustomStat('${key}',-1)" aria-label="-1">−</button>
+        <span class="cs-val">${cur}+</span>
+        <button class="cs-btn" ${canPlus?'':'disabled'} onclick="ubAdjustCustomStat('${key}',1)" aria-label="+1">+</button>
+        <span class="cs-cost">${cost} pt${cost===1?'':'s'} / step · max ${7-max}+</span>
+      </div>`;
+    };
+    h+=`<div class="cs-block">
+      <div class="cs-hd">
+        <span>Stat Upgrades</span>
+        <span class="cs-budget ${remaining===0?'full':''}">${used} / ${profile.maxUpgrades} used</span>
+      </div>
+      ${statRow('attack','Attack')}
+      ${statRow('defence','Defence')}
+      ${statRow('morale','Morale')}
     </div>`;
   }
 
@@ -1556,10 +1629,10 @@ function renderUB(){
              oninput="ubSet('ptsPerW',parseInt(this.value)||0)"></div>`;
   }
   if(isCustom){
-    h+=`<div class="ub-misc-row"><span>Base points cost (Knight Commander Generator):</span>
-      <input type="number" class="ub-misc-inp" value="${parseInt(_ub.ptsPerW)||0}" min="0"
-             oninput="ubSet('ptsPerW',parseInt(this.value)||0)"></div>
-      <div class="amber-box" style="margin-top:6px;font-size:.78rem">Enter the base points cost from the Knight Commander Generator in the rulebook. Equipment, abilities and command-group upgrades are added automatically below.</div>`;
+    const profile=CUSTOM_PROFILES[parseInt(_ub.customRank)||2]||CUSTOM_PROFILES[2];
+    h+=`<div class="ub-misc-row"><span>Base points cost (${esc(profile.name)}):</span>
+      <span class="ub-misc-readonly">${profile.basePts} pts</span></div>
+      <div class="amber-box" style="margin-top:6px;font-size:.78rem">Knight Commander base cost is fixed by Profile (Lord 17 / Baron 27). Stat upgrades come out of the upgrade budget above; equipment, abilities and CG upgrades add to the total below.</div>`;
   }
   if(parsed.notes.length)h+=`<div class="note-box" style="margin-top:9px">${esc(parsed.notes.join('\n'))}</div>`;
 
@@ -1606,7 +1679,8 @@ function ubChangeUnit(newUnit){
     _ub.kind='commander';
     _ub.customRank=2;
     _ub.tier='Regular';
-    _ub.ptsPerW=0;
+    _ub.ptsPerW=CUSTOM_PROFILES[2].basePts;
+    _ub.customStatIncreases={attack:0,defence:0,morale:0};
     _ub.unitData=null;
     _ub.selWeapon=null;_ub.selOptWeapon=null;_ub.selArmor=null;_ub.selShield=null;_ub.selMount=null;
     _ub.selAbilities=[];_ub.selCGUpgrades=[];
@@ -1633,9 +1707,35 @@ function ubChangeUnit(newUnit){
 }
 
 function ubChangeCustomRank(v){
-  _ub.customRank=parseInt(v)||2;
-  // Trim abilities if reducing rank
-  if((_ub.selAbilities||[]).length>_ub.customRank)_ub.selAbilities=_ub.selAbilities.slice(0,_ub.customRank);
+  const rank=parseInt(v)||2;
+  _ub.customRank=rank;
+  const profile=CUSTOM_PROFILES[rank]||CUSTOM_PROFILES[2];
+  _ub.ptsPerW=profile.basePts;
+  // If the new rank shrinks the upgrade budget, scale stat increases down proportionally
+  // (drop morale first since it's cheapest, then defence, then attack).
+  if(!_ub.customStatIncreases)_ub.customStatIncreases={attack:0,defence:0,morale:0};
+  while(customUpgradeBudgetUsed(_ub.customStatIncreases)>profile.maxUpgrades){
+    if(_ub.customStatIncreases.morale>0)_ub.customStatIncreases.morale--;
+    else if(_ub.customStatIncreases.defence>0)_ub.customStatIncreases.defence--;
+    else if(_ub.customStatIncreases.attack>0)_ub.customStatIncreases.attack--;
+    else break;
+  }
+  // Trim abilities if reducing ability slots
+  if((_ub.selAbilities||[]).length>profile.abilitySlots)_ub.selAbilities=_ub.selAbilities.slice(0,profile.abilitySlots);
+  renderUB();
+}
+
+function ubAdjustCustomStat(stat,delta){
+  if(!_ub?._isCustom)return;
+  if(!_ub.customStatIncreases)_ub.customStatIncreases={attack:0,defence:0,morale:0};
+  const profile=CUSTOM_PROFILES[parseInt(_ub.customRank)]||CUSTOM_PROFILES[2];
+  const cur=_ub.customStatIncreases[stat]||0;
+  const next=cur+delta;
+  if(next<0||next>STAT_MAX_INCREASES[stat])return;
+  // Test the proposed budget before committing
+  const proposed={..._ub.customStatIncreases,[stat]:next};
+  if(customUpgradeBudgetUsed(proposed)>profile.maxUpgrades)return;
+  _ub.customStatIncreases=proposed;
   renderUB();
 }
 
@@ -1957,6 +2057,7 @@ Object.assign(window, {
   ubChangeTier,
   ubChangeCustomRank,
   ubChangeCustomName,
+  ubAdjustCustomStat,
   ubSet,
   ubEquip,
   ubTogCG,

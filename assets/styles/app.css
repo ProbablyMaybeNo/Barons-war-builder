@@ -443,6 +443,21 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
 .ub-abi-it input{accent-color:var(--blue);width:12px;height:12px;flex-shrink:0;margin-top:2px}
 .ub-an{flex:1;color:var(--text);font-size:.8rem;display:block}.ub-ac{font-family:'Cinzel',serif;font-size:.66rem;color:var(--blue2);white-space:nowrap;flex-shrink:0}
 .ub-abi-it:hover .ub-an{color:var(--amber2)}
+/* Custom Commander stat-upgrade picker */
+.cs-block{background:rgba(255,213,74,.04);border:1px solid rgba(255,213,74,.22);border-radius:6px;padding:10px 12px;margin:10px 0}
+.cs-hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font-family:'Cinzel',serif;font-size:.78rem;color:var(--amber2);letter-spacing:.05em;text-transform:uppercase}
+.cs-budget{font-family:'Cinzel',serif;font-size:.74rem;color:var(--text2);letter-spacing:.04em}
+.cs-budget.full{color:var(--red)}
+.cs-row{display:grid;grid-template-columns:80px 32px 50px 32px 1fr;align-items:center;gap:8px;padding:5px 0;border-top:1px dashed rgba(255,213,74,.15)}
+.cs-row:first-of-type{border-top:none}
+.cs-lbl{font-family:'Cinzel',serif;font-size:.78rem;color:var(--text)}
+.cs-btn{background:var(--card);border:1px solid var(--border2);color:var(--amber2);font-family:'Cinzel',serif;font-size:1rem;font-weight:700;width:30px;height:30px;border-radius:4px;cursor:pointer;line-height:1;transition:all .12s}
+.cs-btn:hover:not([disabled]){border-color:var(--amber);background:rgba(255,213,74,.1)}
+.cs-btn[disabled]{opacity:.3;cursor:not-allowed}
+.cs-val{font-family:'Cinzel',serif;font-size:1.05rem;font-weight:700;color:var(--amber2);text-align:center}
+.cs-cost{font-family:'Crimson Pro',serif;font-size:.74rem;color:var(--text3);font-style:italic}
+.ub-misc-readonly{font-family:'Cinzel',serif;font-size:.92rem;font-weight:700;color:var(--amber2)}
+
 /* Misc */
 .ub-misc-row{display:flex;align-items:center;gap:9px;margin-top:9px;padding-top:9px;border-top:1px solid var(--border);font-size:.82rem;color:var(--text3)}
 .ub-misc-inp{background:var(--card);border:1px solid var(--border2);color:var(--text);font-family:'Cinzel',serif;font-size:.86rem;padding:4px 8px;border-radius:3px;width:68px;text-align:center}
