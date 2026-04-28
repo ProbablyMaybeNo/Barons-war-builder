@@ -621,8 +621,14 @@ function checkFactionLegality(fid){
     if(pct<f.green_min_pct)alerts.push(`⚠ ${label}: Green troops ${pct.toFixed(0)}% (min ${f.green_min_pct}%)`);
   }
   if(f?.rabble_min_pct){
-    // Per supplement: only Green or Irregular rabble-flagged groups count
-    const rp=rows.filter(r=>r.hasRabble&&(r.tier==='Green'||r.tier==='Irregular')).reduce((s,r)=>s+rowTotal(r),0);
+    // Per supplement: only Green or Irregular rabble-flagged groups count.
+    // Re-derive has_rabble from the live data file so rows whose hasRabble flag
+    // was never populated (older builds, edits that didn't propagate) still count.
+    const rp=rows.filter(r=>{
+      if(r.tier!=='Green'&&r.tier!=='Irregular')return false;
+      const u=BW_DATA.units.find(u=>u.faction_id===r.faction_id&&u.unit===r.unit&&u.experience_tier===r.tier);
+      return u?!!u.has_rabble:!!r.hasRabble;
+    }).reduce((s,r)=>s+rowTotal(r),0);
     const pct=spent>0?(rp/spent)*100:0;
     if(pct<f.rabble_min_pct)alerts.push(`⚠ ${label}: Rabble Groups ${pct.toFixed(0)}% (Horseless Classes requires ${f.rabble_min_pct}% on Green/Irregular Light Cavalry, Bowmen or Gaelic Levies)`);
   }
@@ -1979,7 +1985,7 @@ function renderRow(row){
           <span class="rrow-name">${esc(row.unit)}</span>
           <span class="rrow-tier ${tcls}">${esc(row.tier)}</span>
           ${row._isCustom?`<span class="rrow-custom" title="Custom Commander (Knight Commander Generator)">★ Custom T${row.customRank||2}</span>`:''}
-          ${row.hasRabble&&(row.tier==='Green'||row.tier==='Irregular')?`<span class="rrow-rabble" title="Counts toward the Scottish 20% Rabble requirement">RABBLE</span>`:''}
+          ${(()=>{const u=BW_DATA.units.find(u=>u.faction_id===row.faction_id&&u.unit===row.unit&&u.experience_tier===row.tier);const hr=u?!!u.has_rabble:!!row.hasRabble;return hr&&(row.tier==='Green'||row.tier==='Irregular')?`<span class="rrow-rabble" title="Counts toward the Scottish 20% Rabble requirement">RABBLE</span>`:'';})()}
           ${!isC?`<span class="rrow-count">×${parseInt(row.warriors)||1}</span>`:''}
         </div>
         ${hasTags?`<div class="rrow-tags">${eqTags}${cgTags}${inhTags}${abiTags}</div>`:''}
