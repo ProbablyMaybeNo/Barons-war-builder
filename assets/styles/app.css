@@ -249,6 +249,17 @@ html,body{height:100%;font-family:'Crimson Pro',serif;background:var(--panel);co
 .empty-state h3{font-family:'Cinzel',serif;color:var(--text2);margin-bottom:8px}
 .empty-state p{font-size:.98rem;max-width:280px;margin:0 auto}
 .empty-state .prompt{color:var(--amber2);font-style:italic;margin-top:8px;font-size:.95rem}
+.empty-state .empty-fleur{color:var(--amber2);font-size:1.12em;line-height:1;vertical-align:-0.05em}
+.empty-state .empty-lead--mobile,
+.empty-state .empty-prompt--mobile{display:none}
+@media (max-width: 700px){
+  .empty-state .empty-lead--desktop,
+  .empty-state .empty-prompt--desktop{display:none}
+  .empty-state .empty-lead--mobile,
+  .empty-state .empty-prompt--mobile{display:block}
+  .empty-state .empty-lead--mobile,
+  .empty-state .empty-prompt--mobile{max-width:min(320px,92vw)}
+}
 
 /* ── UNITS TAB ── */
 .sub-tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid var(--border)}
