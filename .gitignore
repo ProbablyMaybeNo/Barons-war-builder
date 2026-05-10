@@ -7,3 +7,8 @@ build
 coverage
 .vscode
 .idea
+
+# Book source material — copyrighted, don't publish
+src/*.pdf
+src/*.docx
+
