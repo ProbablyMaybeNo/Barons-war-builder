@@ -194,7 +194,7 @@
 </div>
 
 
-<script type="module" src="./src/app.js?v=20260428b-rabblesync"></script>
+<script type="module" src="./src/app.js?v=20260510a-parry"></script>
 
 <!-- UNIT BUILDER MODAL -->
 <div class="modal-overlay" id="ubOverlay" onclick="if(event.target===this)closeUB()">
@@ -217,7 +217,13 @@
         </div>
       </div>
     </div>
-    <div class="ub-tip" id="ubTip"><div class="ub-tip-empty">Hover an item to see its rules</div></div>
+    <div class="ub-tip" id="ubTip">
+      <div class="ub-tip-hdr" onclick="toggleTipMin()">
+        <span class="ub-tip-hdr-lbl">Rules</span>
+        <button class="ub-tip-min" id="ubTipMin" type="button" aria-label="Minimize rules panel" aria-expanded="true">▾</button>
+      </div>
+      <div class="ub-tip-body" id="ubTipBody"><div class="ub-tip-empty">Tap an option to see its rules</div></div>
+    </div>
   </div>
 </div>
 </body>

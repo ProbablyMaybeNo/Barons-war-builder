@@ -13,7 +13,7 @@ const TIER_ORDER = {Green:0,Irregular:1,Regular:2,Veteran:3};
 const TIER_CSS = {Green:'tier-green',Irregular:'tier-irregular',Regular:'tier-regular',Veteran:'tier-veteran',Named:'tier-named'};
 const STORAGE_KEY = 'bw_kj_v4';
 const FACTION_LABELS = {feudal_european:'Feudal European',mercenary:'Mercenary',flemish:'Flemish',poitevin:'Poitevin',medieval_scottish:'Medieval Scottish',welsh:'Welsh',outlaw:'Outlaw'};
-const TWO_HANDED = new Set(['Two Handed Weapon','Improvised Two Handed Weapon','Bill / Polearm','Dane Axe','Dual Daggers','Bill','Bill (Regulars)']);
+const TWO_HANDED = new Set(['Two Handed Weapon','Improvised Two Handed Weapon','Bill / Polearm','Dane Axe','Dual Daggers','Bill','Bill (Regulars)','Bow','Crossbow']);
 const COMMAND_UPGRADE_COST_OVERRIDES = {Pennant:7};
 const WEAPON_CHOICE_RANGED_OPTIONS = ['Javelin','Bow'];
 
@@ -86,7 +86,7 @@ function parseProfile(profile){
   const normalised=profile.replace(/\\n/g,'\n');
   for(const rawLine of normalised.split('\n')){
     const line=rawLine.trim();
-    const strip=s=>s.split(',').map(w=>w.trim().split(' - ')[0].replace(/\*$/,'').replace(/\s*\([^)]*\)/g,'').trim()).filter(Boolean);
+    const strip=s=>s.split(',').map(w=>w.trim().split(' - ')[0].replace(/\s*\([^)]*\)/g,'').replace(/\*+$/,'').trim()).filter(Boolean);
     if(line.startsWith('Weapon, Must'))res.weaponsMust=strip(line.replace(/^Weapon, Must choose one:\s*/,''));
     else if(line.startsWith('Weapon, May'))res.weaponsMay=strip(line.replace(/^Weapon, May choose one:\s*/,''));
     else if(line.startsWith('Armour,'))res.armor=strip(line.replace(/^Armour,.*?choose one:\s*/,''));
@@ -240,7 +240,9 @@ function uniqueUnits(units){
 
 function getAvailableAbilities(fid){
   const generic=BW_DATA.purchasable.map(a=>({name:a.name,cost:a.cost||0,effect:a.effect||'',source:'generic'}));
-  let retinue=BW_DATA.retinue_abilities.filter(a=>a.faction_id===fid).map(a=>({name:a.ability,cost:a.cost||0,effect:a.effect||'',source:'retinue'}));
+  // Skip inherent-only entries — they live in retinue_abilities for tooltip/glossary lookup
+  // but the King John supplement bakes them into unit cost, so they're not separately purchasable.
+  let retinue=BW_DATA.retinue_abilities.filter(a=>a.faction_id===fid&&!a.inherent_only).map(a=>({name:a.ability,cost:a.cost||0,effect:a.effect||'',source:'retinue'}));
   // Mercenary Company Abilities: only the retinue's chosen Company is selectable
   if(fid==='mercenary'){
     const chosen=state.mercenaryCompany;
@@ -461,6 +463,7 @@ function openSBCharModal(fid){
   document.getElementById('ubTitle').textContent='Add Character';
   renderUB();
   document.getElementById('ubOverlay').classList.add('open');
+  _restoreTipMin();
 }
 
 function ubChangeChar(charName){
@@ -1000,11 +1003,14 @@ function renderRules(){
       const cost=COMMAND_UPGRADE_COST_OVERRIDES[n]??cu.cost;
       return abiRefItem(n,cost,cu.effect||'',fid+'-cg-'+i);
     }).join('');
+    const inherentAbis=abilities.filter(a=>a.inherent_only);
+    const purchasableAbis=abilities.filter(a=>!a.inherent_only);
     retBody+=`<div class="rules-retinue-block">
       <div class="rules-sub-hd">Faction Traits</div>
       ${traits.map(t=>`<div class="trait-card"><div class="trait-card-name">${esc(t.trait)}</div><div class="trait-card-text">${esc(t.description||'')}</div></div>`).join('')}
       ${f?.restriction_notes?`<div class="amber-box">${esc(f.restriction_notes)}</div>`:''}
-      ${abilities.length?`<div class="rules-sub-hd">Retinue-Specific Abilities</div>${abilities.map((a,i)=>abiRefItem(a.ability,a.cost,a.effect,fid+'-'+i)).join('')}`:''}
+      ${inherentAbis.length?`<div class="rules-sub-hd">Inherent Abilities <span style="font-weight:400;font-size:.78rem;opacity:.7">(baked into unit cost)</span></div>${inherentAbis.map((a,i)=>abiRefItem(a.ability,a.cost,a.effect,fid+'-inh-'+i)).join('')}`:''}
+      ${purchasableAbis.length?`<div class="rules-sub-hd">Retinue-Specific Abilities</div>${purchasableAbis.map((a,i)=>abiRefItem(a.ability,a.cost,a.effect,fid+'-rs-'+i)).join('')}`:''}
       ${cgItems?`<div class="rules-sub-hd">Command Group Upgrades</div>${cgItems}`:''}
     </div>`;
   } else {
@@ -1327,10 +1333,19 @@ function calcStats(row){
     if(m.def!==undefined)def+=m.def;
     if(m.shld!==undefined)shld=m.shld;
   });
+  // PARRY: Sword and Two Handed Weapon improve the shield roll by 1, or grant a 9+ roll if no shield is equipped.
+  const wepBase=(row.selWeapon||'').replace(/\s*\([^)]*\)$/,'');
+  if(wepBase==='Sword'||wepBase==='Two Handed Weapon'){
+    if(shld)shld=Math.max(2,shld-1);
+    else shld=9;
+  }
   const wep=row.selWeapon,ed=EQUIP[wep]||{};
   const ms=(ed.modifier||'');
-  if(ms.includes('+2 to Attack'))atkMod=-2;
-  else if(ms.includes('+1 to Attack'))atkMod=-1;
+  // Flat attack modifier applies to melee weapons only; ranged modifiers (Bow/Crossbow) are range-conditional.
+  if(ed.kind==='melee'){
+    if(ms.includes('+2 to Attack'))atkMod=-2;
+    else if(ms.includes('+1 to Attack'))atkMod=-1;
+  }
   const note=wep&&ms?`${wep}: ${ms}`:'';
   return{move:move+'"',attack:(baseAtk+atkMod)+'+',defence:def+'+',shield:shld?shld+'+':'—',morale:baseMor+'+',actions:baseActions,note};
 }
@@ -1349,6 +1364,7 @@ function openUBNew(fid,unitName,tier){
   document.getElementById('ubTitle').textContent='Add Unit';
   renderUB();
   document.getElementById('ubOverlay').classList.add('open');
+  _restoreTipMin();
 }
 
 function openUBEdit(rowId){
@@ -1358,6 +1374,7 @@ function openUBEdit(rowId){
   document.getElementById('ubTitle').textContent='Edit — '+row.unit;
   renderUB();
   document.getElementById('ubOverlay').classList.add('open');
+  _restoreTipMin();
 }
 
 function closeUB(){document.getElementById('ubOverlay').classList.remove('open');_ub=null;}
@@ -1643,7 +1660,8 @@ function renderUB(){
   if(parsed.notes.length)h+=`<div class="note-box" style="margin-top:9px">${esc(parsed.notes.join('\n'))}</div>`;
 
   document.getElementById('ubScroll').innerHTML=h;
-  document.getElementById('ubTip').innerHTML='<div class="ub-tip-empty">Hover an item to see rules</div>';
+  const tipBody=document.getElementById('ubTipBody')||document.getElementById('ubTip');
+  if(tipBody)tipBody.innerHTML='<div class="ub-tip-empty">'+(_IS_TOUCH?'Tap an option to see its rules':'Hover an item to see rules')+'</div>';
   ubUpdateCost();
 }
 
@@ -1884,21 +1902,63 @@ function regTip(name, mod, eff) {
   _TIPS[key] = {name, mod, eff};
   return key;
 }
+// Touch devices fire mouseenter on tap but mouseleave fires unpredictably,
+// so we keep the tip "pinned" instead of auto-clearing on leave.
+const _IS_TOUCH = (typeof window!=='undefined') &&
+  (('ontouchstart' in window) || (navigator.maxTouchPoints>0));
+function _tipBody(){
+  return document.getElementById('ubTipBody') || document.getElementById('ubTip');
+}
+function _expandTipIfMinimized(){
+  const p=document.getElementById('ubTip');
+  if(p && p.classList.contains('minimized')){
+    p.classList.remove('minimized');
+    const btn=document.getElementById('ubTipMin');
+    if(btn)btn.setAttribute('aria-expanded','true');
+    try{sessionStorage.setItem('ubTipMin','0');}catch(e){}
+  }
+}
 function showTipKey(key) {
   const t = _TIPS[key]; if(!t) return;
-  const panel = document.getElementById('ubTip'); if(!panel) return;
+  const panel = _tipBody(); if(!panel) return;
   panel.innerHTML = `${t.name ? `<div class="ub-tip-name">${esc(t.name)}</div>` : ''}
     ${t.mod ? `<div class="ub-tip-mod">${esc(t.mod)}</div>` : ''}
     ${t.eff ? `<div class="ub-tip-eff">${esc(t.eff)}</div>` : '<div class="ub-tip-empty">No additional rules text.</div>'}`;
+  panel.scrollTop=0;
+  _expandTipIfMinimized();
 }
 function showTip(name,mod,eff){
-  const panel=document.getElementById('ubTip');if(!panel)return;
+  const panel=_tipBody();if(!panel)return;
   panel.innerHTML=`${name?`<div class="ub-tip-name">${esc(name)}</div>`:''}
     ${mod?`<div class="ub-tip-mod">${esc(mod)}</div>`:''}
     ${eff?`<div class="ub-tip-eff">${esc(eff)}</div>`:'<div class="ub-tip-empty">No additional rules text.</div>'}`;
+  panel.scrollTop=0;
+  _expandTipIfMinimized();
 }
 function clearTip(){
-  const p=document.getElementById('ubTip');if(p)p.innerHTML='<div class="ub-tip-empty">Hover an item to see its rules</div>';
+  // On touch devices, mouseleave fires erratically — keep the tip pinned so
+  // users can actually read it. They explicitly minimize via the header.
+  if(_IS_TOUCH)return;
+  const p=_tipBody();if(p)p.innerHTML='<div class="ub-tip-empty">Hover an item to see its rules</div>';
+}
+function toggleTipMin(){
+  const p=document.getElementById('ubTip');if(!p)return;
+  const min=p.classList.toggle('minimized');
+  const btn=document.getElementById('ubTipMin');
+  if(btn)btn.setAttribute('aria-expanded',min?'false':'true');
+  try{sessionStorage.setItem('ubTipMin',min?'1':'0');}catch(e){}
+}
+function _restoreTipMin(){
+  try{
+    if(sessionStorage.getItem('ubTipMin')==='1'){
+      const p=document.getElementById('ubTip');
+      if(p){
+        p.classList.add('minimized');
+        const btn=document.getElementById('ubTipMin');
+        if(btn)btn.setAttribute('aria-expanded','false');
+      }
+    }
+  }catch(e){}
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2072,6 +2132,7 @@ Object.assign(window, {
   ubTogAbi,
   showTipKey,
   clearTip,
+  toggleTipMin,
   deleteRow,
   assignCG,
   rrowTap,
