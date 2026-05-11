@@ -12,3 +12,7 @@ coverage
 src/*.pdf
 src/*.docx
 
+# One-off data import / audit scripts and their source dumps
+src/_*.py
+src/_*.txt
+
