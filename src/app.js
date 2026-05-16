@@ -1650,7 +1650,7 @@ function renderUB(){
         const tipAttrs=LITE_MODE?'':`data-tkey="${tk}" onmouseenter="showTipKey(this.dataset.tkey)" onmouseleave="clearTip()"`;
         return `<label class="ub-abi-it ${ck?'ck':''} ${dis?'dis':''}" ${tipAttrs} ${blockReason?`title="Disabled: ${esc(blockReason)}"`:''}>
           <input type="checkbox" ${ck?'checked':''} ${dis?'disabled':''} onchange="ubTogAbi('${esc(a.name)}',${a.cost||0},this.checked)">
-          <span class="ub-an">${esc(a.name)}${cmdOnly?' <span class="ub-an-cmd" title="Commander only">⚔</span>':''}</span>
+          ${abilityTypeChipsHtml(a.name)}<span class="ub-an">${esc(a.name)}${cmdOnly?' <span class="ub-an-cmd" title="Commander only">⚔</span>':''}</span>
           <span class="ub-ac">+${a.cost||0}</span></label>`;
       };
       // Filter out abilities that the unit already has as Inherent — they're baked into the unit cost
