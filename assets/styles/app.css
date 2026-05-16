@@ -440,13 +440,12 @@ html,body{
 .bc-kind.warrior{background:rgba(242,136,75,.15);color:var(--bluelight)}
 .bc-abilities{font-size:.75rem;color:var(--text3);font-style:italic;margin-bottom:7px}
 .bc-abilities-chips{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:7px}
-/* Ability-type chips (G/I/R/C) — render inside an .abi-chip or .abi-ref-hdr */
-.abi-types{display:inline-flex;gap:2px;margin-right:5px;vertical-align:middle}
-.abi-type{display:inline-block;min-width:14px;height:14px;line-height:14px;text-align:center;font-size:9px;font-weight:700;border-radius:2px;font-family:'Cinzel',serif;letter-spacing:0;padding:0 3px;cursor:help}
-.abi-type-g{background:var(--green);color:#fff}
-.abi-type-i{background:var(--amber);color:#1a0508}
-.abi-type-r{background:var(--blue);color:#fff}
-.abi-type-c{background:#7a4dff;color:#fff}
+/* Ability-type chips (G/R/C) — render as small gold letters appended after an ability name. */
+.abi-types{display:inline-flex;gap:3px;margin-left:2px;vertical-align:baseline}
+.abi-type{font-family:'Cinzel',serif;font-size:.62rem;font-weight:700;color:var(--amber2);letter-spacing:.05em;cursor:help;opacity:.85}
+.abi-type:hover{opacity:1}
+/* Tooltip subtitle line, e.g. "Inherent · Commander" */
+.abi-chip-tip-label{display:block;font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;color:var(--amber2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px;padding-bottom:5px;border-bottom:1px solid var(--border2)}
 .abi-type-legend{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 12px;padding:7px 11px;background:var(--card);border:1px solid var(--border2);border-radius:4px;font-size:.78rem;color:var(--text3)}
 .abi-type-legend--mini{margin:0 0 10px;padding:5px 9px;font-size:.72rem;gap:8px}
 .abi-type-legend strong{font-family:'Cinzel',serif;color:var(--amber2);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;margin-right:4px}
