@@ -1168,45 +1168,40 @@ function exportRowLines(row,siblings){
 // equipment row, inherent row, chosen-abilities row, command-group row.
 const EXPORT_CSS = `
   *{box-sizing:border-box}
-  body{font-family:'Crimson Pro','Georgia','Times New Roman',serif;background:#fdfaf2;color:#1a1a1a;max-width:820px;margin:18px auto;padding:0 18px;line-height:1.4}
-  .doc-header{text-align:center;padding:14px 0 12px;border-top:3px double #6b4423;border-bottom:3px double #6b4423;margin-bottom:18px}
-  .doc-title{font-family:'Cinzel','Trajan Pro',serif;font-size:24px;letter-spacing:0.12em;text-transform:uppercase;color:#3a2410;margin:0;font-weight:700}
-  .doc-sub{font-family:'Cinzel',serif;font-size:11px;color:#6b4423;letter-spacing:0.08em;margin-top:5px;text-transform:uppercase}
-  .merc-banner{font-family:'Cinzel',serif;font-size:11px;text-align:center;color:#6b4423;letter-spacing:0.08em;text-transform:uppercase;margin:-6px 0 14px;padding:4px 8px;border:1px dashed #c9a96e;background:#faf3df}
-  .faction-header{display:flex;justify-content:space-between;align-items:baseline;font-family:'Cinzel',serif;font-size:15px;color:#3a2410;text-transform:uppercase;letter-spacing:0.09em;border-bottom:2px solid #6b4423;padding:10px 4px 5px;margin:18px 0 8px}
-  .faction-pts{font-size:11px;color:#8b6633;letter-spacing:0.05em}
-  .faction-role{font-size:10px;color:#8b6633;letter-spacing:0.1em;margin-left:8px;padding:1px 6px;border:1px solid #c9a96e;border-radius:2px;background:#faf3df}
-  .section-label{font-family:'Cinzel',serif;font-size:10px;color:#6b4423;letter-spacing:0.16em;margin:14px 0 6px;padding-bottom:3px;border-bottom:1px solid #c9a96e;text-transform:uppercase;page-break-after:avoid}
-  .unit-card{border:1.5px solid #6b4423;background:#fffdf6;margin-bottom:10px;box-shadow:1.5px 1.5px 0 #d8c08a;page-break-inside:avoid}
-  .uc-hdr{background:#6b4423;color:#fdfaf2;padding:6px 12px;display:flex;justify-content:space-between;align-items:baseline;font-family:'Cinzel',serif;letter-spacing:0.05em}
-  .uc-name{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em}
+  body{font-family:'Georgia','Times New Roman',serif;background:#fff;color:#000;max-width:820px;margin:18px auto;padding:0 18px;line-height:1.35}
+  .doc-header{text-align:center;padding:8px 0 8px;border-bottom:1px solid #000;margin-bottom:14px}
+  .doc-title{font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin:0}
+  .doc-sub{font-size:11px;margin-top:4px}
+  .merc-banner{font-size:11px;text-align:center;margin:0 0 12px;padding:3px 6px;border:1px solid #000}
+  .faction-header{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #000;padding:8px 0 3px;margin:14px 0 6px}
+  .faction-pts{font-size:11px;font-weight:400}
+  .faction-role{font-size:10px;margin-left:8px;padding:0 5px;border:1px solid #000}
+  .section-label{font-size:10px;font-weight:700;letter-spacing:0.12em;margin:10px 0 4px;text-transform:uppercase;page-break-after:avoid}
+  .unit-card{border:1px solid #000;margin-bottom:6px;page-break-inside:avoid}
+  .uc-hdr{padding:4px 8px;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #000}
+  .uc-name{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em}
   .uc-meta{font-size:11px}
-  .uc-tier{display:inline-block;padding:1px 7px;background:rgba(255,253,246,0.18);border:1px solid rgba(255,253,246,0.4);border-radius:2px;margin-right:6px;font-size:10px;letter-spacing:0.06em}
-  .uc-pts{color:#ffe39a;margin-left:6px}
-  .uc-stats{display:grid;grid-template-columns:repeat(6,1fr);background:#f3ead0;border-bottom:1px solid #c9a96e}
-  .uc-stat{text-align:center;padding:5px 2px 7px;border-right:1px solid #c9a96e}
+  .uc-tier{margin-right:5px}
+  .uc-pts{margin-left:5px}
+  .uc-stats{display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid #000}
+  .uc-stat{text-align:center;padding:3px 2px 4px;border-right:1px solid #000}
   .uc-stat:last-child{border-right:0}
-  .uc-stat-l{font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:#6b4423}
-  .uc-stat-v{font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:#3a2410;margin-top:2px}
-  .uc-note{font-size:10.5px;font-style:italic;color:#6b4423;padding:3px 12px;background:#faf3df;border-bottom:1px solid #ead9b0}
-  .uc-row{display:flex;padding:5px 12px;border-bottom:1px solid #ead9b0;align-items:baseline;gap:8px}
+  .uc-stat-l{font-size:9px;letter-spacing:0.06em;text-transform:uppercase}
+  .uc-stat-v{font-size:13px;font-weight:700;margin-top:1px}
+  .uc-note{font-size:10.5px;font-style:italic;padding:2px 8px;border-bottom:1px solid #000}
+  .uc-row{display:flex;padding:3px 8px;border-bottom:1px solid #000;align-items:baseline;gap:6px}
   .uc-row:last-child{border-bottom:0}
-  .uc-row-l{font-family:'Cinzel',serif;font-size:9.5px;letter-spacing:0.09em;text-transform:uppercase;color:#6b4423;min-width:92px;flex-shrink:0;padding-top:1px}
-  .uc-tags{display:flex;flex-wrap:wrap;gap:4px;flex:1}
-  .uc-tag{font-size:11px;padding:1.5px 7px;border:1px solid #c9a96e;background:#fffdf6;color:#3a2410;border-radius:2px;white-space:nowrap}
-  .uc-tag.eq{background:#faf3df}
-  .uc-tag.cg{background:#f7e6c8}
-  .uc-tag.inh{background:#fffdf6;font-style:italic;color:#5a3a14}
-  .uc-tag.abi{background:#fff2d6;color:#5a3a14}
-  .uc-tag .cost{font-family:'Cinzel',serif;font-size:9px;color:#8b6633;margin-left:4px}
-  .empty-note{font-style:italic;color:#8b6633;padding:6px 4px;font-size:12px}
-  .doc-footer{margin-top:24px;padding-top:10px;border-top:1px solid #c9a96e;font-size:10px;color:#6b4423;text-align:center;letter-spacing:0.04em}
+  .uc-row-l{font-size:9.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;min-width:90px;flex-shrink:0}
+  .uc-row-v{font-size:11px;flex:1}
+  .uc-row-v .sep{margin:0 6px}
+  .uc-row-v .cost{font-size:9.5px;margin-left:3px}
+  .empty-note{font-style:italic;padding:4px 0;font-size:11px}
+  .doc-footer{margin-top:18px;padding-top:6px;border-top:1px solid #000;font-size:10px;text-align:center}
   @media print{
-    body{margin:0;padding:10px 14px;max-width:none;background:#fff}
-    .unit-card{page-break-inside:avoid;box-shadow:none}
-    .faction-header{page-break-after:avoid}
-    .section-label{page-break-after:avoid}
-    .doc-header{margin-bottom:10px}
+    body{margin:0;padding:10px 14px;max-width:none}
+    .unit-card{page-break-inside:avoid}
+    .faction-header,.section-label{page-break-after:avoid}
+    .doc-header{margin-bottom:8px}
   }
 `;
 
@@ -1230,11 +1225,11 @@ function unitCardHTML(row, siblings){
     </div>
     <div class="uc-stats">${statCells.map(([l,v])=>`<div class="uc-stat"><div class="uc-stat-l">${l}</div><div class="uc-stat-v">${esc(String(v))}</div></div>`).join('')}</div>
     ${st.note?`<div class="uc-note">${esc(st.note)}</div>`:''}
-    ${eq.length?`<div class="uc-row"><span class="uc-row-l">Equipment</span><span class="uc-tags">${eq.map(e=>`<span class="uc-tag eq">${esc(e)}</span>`).join('')}</span></div>`:''}
-    ${inh.length?`<div class="uc-row"><span class="uc-row-l">Inherent</span><span class="uc-tags">${inh.map(a=>`<span class="uc-tag inh">${esc(a)}</span>`).join('')}</span></div>`:''}
-    ${sa.length?`<div class="uc-row"><span class="uc-row-l">Abilities</span><span class="uc-tags">${sa.map(a=>`<span class="uc-tag abi">${esc(a.name)}${a.cost?` <span class="cost">${a.cost} pts</span>`:''}</span>`).join('')}</span></div>`:''}
-    ${cg.length?`<div class="uc-row"><span class="uc-row-l">CG Upgrades</span><span class="uc-tags">${cg.map(u=>`<span class="uc-tag cg">${esc(u)}</span>`).join('')}</span></div>`:''}
-    ${cgRow?`<div class="uc-row"><span class="uc-row-l">Command Group</span><span class="uc-tags"><span class="uc-tag cg">${esc(cgRow.unit)} · ${esc(cgRow.tier)} ×${cgRow.warriors||1}</span></span></div>`:''}
+    ${eq.length?`<div class="uc-row"><span class="uc-row-l">Equipment</span><span class="uc-row-v">${eq.map(e=>esc(e)).join(', ')}</span></div>`:''}
+    ${inh.length?`<div class="uc-row"><span class="uc-row-l">Inherent</span><span class="uc-row-v">${inh.map(a=>esc(a)).join(', ')}</span></div>`:''}
+    ${sa.length?`<div class="uc-row"><span class="uc-row-l">Abilities</span><span class="uc-row-v">${sa.map(a=>`${esc(a.name)}${a.cost?` <span class="cost">(${a.cost} pts)</span>`:''}`).join(', ')}</span></div>`:''}
+    ${cg.length?`<div class="uc-row"><span class="uc-row-l">CG Upgrades</span><span class="uc-row-v">${cg.map(u=>esc(u)).join(', ')}</span></div>`:''}
+    ${cgRow?`<div class="uc-row"><span class="uc-row-l">Command Group</span><span class="uc-row-v">${esc(cgRow.unit)} (${esc(cgRow.tier)} ×${cgRow.warriors||1})</span></div>`:''}
   </div>`;
 }
 
@@ -1258,20 +1253,17 @@ function buildExportHTML(){
       const cmds=rows.filter(r=>r.kind==='commander'||isCommanderUnit(r.unitData)||r._isChar);
       const wars=rows.filter(r=>!(r.kind==='commander'||isCommanderUnit(r.unitData)||r._isChar));
       if(cmds.length){
-        parts.push(`<div class="section-label">⚜ Commanders</div>`);
+        parts.push(`<div class="section-label">Commanders</div>`);
         for(const c of cmds)parts.push(unitCardHTML(c,rows));
       }
       if(wars.length){
-        parts.push(`<div class="section-label">⚔ Warriors</div>`);
+        parts.push(`<div class="section-label">Warriors</div>`);
         for(const w of wars)parts.push(unitCardHTML(w,rows));
       }
     }
   }
   return `<!doctype html><html><head><meta charset="utf-8">
 <title>Barons' War List — ${esc(titleSummary)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>${EXPORT_CSS}</style>
 </head>
 <body>
