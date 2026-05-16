@@ -218,7 +218,8 @@ function getInherent(profile){
 const INHERENT_GLOSSARY={
   COMMANDER:'This unit is a Commander. It may issue Command Actions to other Groups in its Retinue (within Command Range), lead a Command Group, generate its own Attack dice in Melee, target enemy Warriors in base contact, and be targeted by enemy Warriors in base contact.',
   PALADIN:'When selecting a Paladin you must choose one Paladin Ability (Cruelty, Experienced Knight, Glory Seekers, Indomitable, or Inspire). The cost is included in the Commander’s profile. The Paladin counts as having that Ability for all rules purposes (e.g. Command Group purchases like Feud).',
-  REPUTATION:'Reputation is everything. The Group and its Commander (if part of the Group) ignore the negative effects of Morale Penalties in Melee Combat.'
+  REPUTATION:'Always count the enemy as having one additional Morale Penalty in Melee.',
+  RESOLVED:'Provided the group has at least twice as many warriors as morale penalties, it adds +1 to morale (but not order) checks.'
 };
 
 function selectedAbilityEffect(row, abilityName){
