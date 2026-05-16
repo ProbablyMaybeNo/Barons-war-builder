@@ -165,12 +165,38 @@ function getAbilityRule(name){
   return u?.effect||r?.effect||(typeof INHERENT_GLOSSARY!=='undefined'?INHERENT_GLOSSARY[base]:'')||'';
 }
 
+// Classify an ability by source/scope. Returns an array of letter codes:
+//   G = Generic (in BW_DATA.purchasable, available to all factions)
+//   I = Inherent (in BW_DATA.retinue_abilities with inherent_only=true)
+//   R = Retinue-specific (in BW_DATA.retinue_abilities with inherent_only=false)
+//   C = Commander-only (effect text contains "Commander only")
+// An ability may carry multiple codes (e.g. a commander-only retinue ability is ['R','C']).
+function classifyAbility(name){
+  const base=(name||'').replace(/\s*\([^)]*\)\s*$/,'').trim().toUpperCase();
+  const types=[];
+  if(BW_DATA.purchasable.find(a=>a.name.toUpperCase()===base))types.push('G');
+  const matches=BW_DATA.retinue_abilities.filter(a=>a.ability.toUpperCase()===base);
+  if(matches.some(a=>a.inherent_only))types.push('I');
+  if(matches.some(a=>!a.inherent_only))types.push('R');
+  const rule=getAbilityRule(name);
+  if(/commander only/i.test(rule))types.push('C');
+  return types;
+}
+
+const ABI_TYPE_LABEL={G:'Generic — available to any faction',I:'Inherent — baked into unit profile',R:'Retinue-specific — purchasable for this faction',C:'Commander only'};
+
+function abilityTypeChipsHtml(name){
+  const types=classifyAbility(name);
+  if(!types.length)return'';
+  return `<span class="abi-types">${types.map(t=>`<span class="abi-type abi-type-${t.toLowerCase()}" title="${ABI_TYPE_LABEL[t]}">${t}</span>`).join('')}</span>`;
+}
+
 // Render a hover-tip chip for an ability. Caller may pre-supply the rule text
 // (e.g. for character abilities where the rule is already inline).
 function abilityChip(name,rule){
   const r=rule||getAbilityRule(name)||'No rule text on file — see Rules tab or printed supplement.';
   // tap-to-toggle for touch: clicking the chip toggles .open; clicking outside closes it.
-  return `<span class="abi-chip" tabindex="0" onclick="toggleAbilityChip(event,this)"><span class="abi-chip-name">${esc(name)}</span><span class="abi-chip-tip">${esc(r)}</span></span>`;
+  return `<span class="abi-chip" tabindex="0" onclick="toggleAbilityChip(event,this)">${abilityTypeChipsHtml(name)}<span class="abi-chip-name">${esc(name)}</span><span class="abi-chip-tip">${esc(r)}</span></span>`;
 }
 
 // Toggle a chip open and close any others. Outside-click closes all (wired in init()).
@@ -949,7 +975,13 @@ function renderRules(){
   ];
   html+=ruleSec('⚭ Allied / Combined Retinue Rules',alliedRules.map(r=>`<div class="trait-card"><div class="trait-card-name">${esc(r.topic)}</div><div class="trait-card-text">${esc(r.text)}</div></div>`).join(''));
 
-  html+=ruleSec('✦ Universal Abilities',BW_DATA.purchasable.map((a,i)=>abiRefItem(a.name,a.cost,a.effect,'gen-'+i)).join(''));
+  const typeLegend=`<div class="abi-type-legend"><strong>Type icons:</strong>
+    <span class="abi-type-legend-item"><span class="abi-type abi-type-g">G</span> Generic</span>
+    <span class="abi-type-legend-item"><span class="abi-type abi-type-i">I</span> Inherent</span>
+    <span class="abi-type-legend-item"><span class="abi-type abi-type-r">R</span> Retinue-specific</span>
+    <span class="abi-type-legend-item"><span class="abi-type abi-type-c">C</span> Commander only</span>
+  </div>`;
+  html+=ruleSec('✦ Universal Abilities',typeLegend+BW_DATA.purchasable.map((a,i)=>abiRefItem(a.name,a.cost,a.effect,'gen-'+i)).join(''));
 
   // Equipment reference
   const kinds=['melee','missile','armour_shield','mount'];
@@ -1041,7 +1073,7 @@ function ruleSec(title,bodyHtml){
 function abiRefItem(name,cost,effect,key){
   const cs=cost!=null?`${cost} pts`:'Inherent';
   return `<div class="abi-ref-item" id="aref-${key}">
-    <div class="abi-ref-hdr"><span class="abi-ref-name">${esc(name)}</span><span class="abi-ref-cost">${esc(cs)}</span></div>
+    <div class="abi-ref-hdr">${abilityTypeChipsHtml(name)}<span class="abi-ref-name">${esc(name)}</span><span class="abi-ref-cost">${esc(cs)}</span></div>
     <div class="abi-ref-effect">${esc(effect||'')}</div>
   </div>`;
 }

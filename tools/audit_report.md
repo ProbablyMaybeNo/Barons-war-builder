@@ -41,6 +41,37 @@ Applied after Ross provided higher-quality screenshots (235743, 235818, 235838,
 
 ---
 
+## Round 5 — Abilities cleanup + type icons (2026-05-16)
+
+Verified the generic-abilities table against new screenshots (002932, 002935,
+002941, 002956, 003005, 003008, 003015) and removed 7 entries from
+`BW_DATA.purchasable` that aren't actually generic abilities:
+
+- **SHIELD DISCIPLINE** — not a real ability; was a duplicate of RAISE SHIELDS
+- **LUCKY**, **PROFESSIONAL**, **SHOVE**, **WAR WISE** — Mercenary retinue abilities
+- **STEAL FROM THE RICH** — Mercenary / Poitevin / Scottish retinue ability
+- **RIDE DOWN** — inherent ability of every faction's mounted Knights
+
+All 6 of the misplaced ones already existed in `BW_DATA.retinue_abilities`
+with the correct faction associations, so removal from `purchasable` is
+non-destructive.
+
+Net: `BW_DATA.purchasable` 40 → 33.
+
+### Type-icon UI
+
+Added `classifyAbility(name)` + small letter chips (G/I/R/C) on every ability:
+
+- **G** Generic (in `BW_DATA.purchasable`)
+- **I** Inherent (in `retinue_abilities` with `inherent_only=true`)
+- **R** Retinue-specific (in `retinue_abilities` with `inherent_only=false`)
+- **C** Commander only (effect text contains "Commander only")
+
+An ability can carry multiple codes (e.g. CRUELTY is `G + C`). Legend renders
+at the top of the Universal Abilities section in the Rules tab.
+
+---
+
 ## Round 3 changes (2026-05-16)
 
 - Flemish Spearmen: 12/15/18 (Irreg/Reg/Vet) → 10/13/16 (Green/Irreg/Reg, no Veteran),
