@@ -1,4 +1,52 @@
-# Point cost audit — 2026-05-15
+# Point cost audit — 2026-05-15 (Round 2: 2026-05-16)
+
+## Round 2 changes (2026-05-16)
+
+Applied after Ross provided higher-quality screenshots (235743, 235818, 235838,
+235911, 235924, 235942) and confirmed several uncertain readings.
+
+### Fixes
+- Poitevin Cutthroats: 10/15/16/19 → 10/13/16/19
+- Poitevin Crossbowmen: 12/16/19 (3 tiers) → 8/11/14/17 (+Green tier)
+- Flemish Mounted Serjeants: 12/16/19 → 12/15/18
+- Welsh Nobles: 12/16/19 → 11/15/18
+- Mounted Welsh Nobles: 12/16/19 → 11/15/18
+- Welsh Skirmishers: 10/14/18/21 → 8/11/15/18
+- Burgemeester: 22/25/28 (Irreg/Reg/Vet) → 23/26/30 (Green/Irreg/Reg)
+- Gascon Javelinmen → renamed Gascon Infantry; 10/15/18/21 → 10/13/18/21
+  (Javelinmen is the inherent ability, not the unit name)
+
+### New units added (14 profiles, ~45 tier rows)
+| Faction | Unit | Tiers | Source |
+|---|---|---|---|
+| Feudal European | Marksman Serjeants | 12/16/19 | SS 214233 |
+| Mercenary | Mercenary Mounted Knights | 14/18/21 (Ride Down) | SS 222108 |
+| Mercenary | Mercenary Mounted Serjeants | 12/15/18 | confirmed by Ross |
+| Poitevin | Poitevin Mounted Knights | 14/18/21 | SS 235743 |
+| Poitevin | Poitevin Marksman Serjeants | 12/16/19 | SS 235743 |
+| Poitevin | Poitevin Mounted Serjeants | 12/15/18 | SS 235743 |
+| Poitevin | Poitevin Bowmen | 8/11/15/18 (Crack Shot) | SS 235838 |
+| Poitevin | Gascon Horsemen | 13/18/21 | SS 235838 + Ross |
+| Poitevin | Ribaldi | 9/12 (Melts Away) | SS 235838 |
+| Flemish | Flemish Mounted Burgemeester | 23/26/30 | SS 235924 + Ross |
+| Flemish | Flemish Bowmen | 8/11/15/18 | SS 235911 |
+| Flemish | Flemish Rabble | 9/12 (Massed Ranks) | SS 235911 |
+| Welsh | Welsh Spearmen | 8/11/15/18 (Wall of Spines) | SS 223839 |
+| Welsh | Welsh Mounted Skirmishers | 8/11/15/18 (Ambush) | SS 223839 |
+
+### Still uncertain / not yet verified
+
+- Flemish Spearmen — book SS 235911 shows Green 10/Irreg 13/Reg 16/Vet ?? but current data
+  has Irreg 12/Reg 15/Vet 18. Possibly two distinct units with overlapping names.
+- "Flemish Warriors" 12/16/19 in data — likely a stat-table row mislabeled as a unit.
+- "Medieval Scottish Warriors" 12/16/19 — same potential issue.
+- "Medieval Welsh Warriors" 12/16/19 — same potential issue.
+- Welsh Lord 24/28/32 (+4/+4) and Welsh Mounted Lord 24/28/32 — unusual for Lord pattern;
+  needs verification against book.
+
+---
+
+# Point cost audit — 2026-05-15 (Round 1)
 
 Source-of-truth ranking (per Ross):
 1. Screenshots in `D:\AI-Workstation\Antigravity\apps\Webscraper\data\images\Barons War King John #2\` (2nd ed photos of book)
