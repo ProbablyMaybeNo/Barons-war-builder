@@ -16,3 +16,11 @@ src/*.docx
 src/_*.py
 src/_*.txt
 
+# Scratch OCR output and image crops produced by audit tooling
+tools/_*/
+tools/_*.txt
+tools/_*.json
+
+# DOCX backups
+src/*.docx.bak
+
