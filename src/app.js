@@ -278,10 +278,13 @@ function getAvailableAbilities(fid){
       return chosen&&u===chosen;
     });
   }
-  const seen=new Set(generic.map(a=>a.name));
-  const out=[...generic];
-  for(const a of retinue)if(!seen.has(a.name)){out.push(a);seen.add(a.name);}
-  return out.sort((a,b)=>a.name.localeCompare(b.name));
+  // If an ability appears in both the generic Universal list AND this faction's Retinue list
+  // (e.g. REBEL is generic but also Scottish-flavored), keep only the Retinue version so it
+  // renders under the faction's Retinue section instead of Universal. Other factions still
+  // see the generic version under Universal.
+  const retNames=new Set(retinue.map(a=>a.name));
+  const genericFiltered=generic.filter(a=>!retNames.has(a.name));
+  return [...genericFiltered,...retinue].sort((a,b)=>a.name.localeCompare(b.name));
 }
 
 function getCommandUpgrade(name){
@@ -1656,7 +1659,10 @@ function renderUB(){
       // Filter out abilities that the unit already has as Inherent — they're baked into the unit cost
       // and shouldn't be re-purchasable. Strip "(Regulars)"-style qualifiers before comparing.
       const inhSet=new Set(inherent.map(n=>n.replace(/\s*\([^)]*\)\s*$/,'').trim().toUpperCase()));
-      const visible=abils.filter(a=>(isC||!COMMANDER_ONLY_ABIS.has(a.name.toUpperCase()))&&!inhSet.has(a.name.toUpperCase()));
+      // Show every non-inherent ability. Commander-only and unit-type restrictions are
+      // surfaced as DISABLED (greyed) checkboxes by the renderAbi helper, not hidden —
+      // users should see what's possible in this retinue and why they can't take it here.
+      const visible=abils.filter(a=>!inhSet.has(a.name.toUpperCase()));
       const character=visible.filter(a=>a.source==='character');
       const retinue=visible.filter(a=>a.source==='retinue');
       const universal=visible.filter(a=>a.source==='generic');
