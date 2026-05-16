@@ -36,13 +36,20 @@ Applied after Ross provided higher-quality screenshots (235743, 235818, 235838,
 
 ### Still uncertain / not yet verified
 
-- Flemish Spearmen — book SS 235911 shows Green 10/Irreg 13/Reg 16/Vet ?? but current data
-  has Irreg 12/Reg 15/Vet 18. Possibly two distinct units with overlapping names.
-- "Flemish Warriors" 12/16/19 in data — likely a stat-table row mislabeled as a unit.
-- "Medieval Scottish Warriors" 12/16/19 — same potential issue.
-- "Medieval Welsh Warriors" 12/16/19 — same potential issue.
 - Welsh Lord 24/28/32 (+4/+4) and Welsh Mounted Lord 24/28/32 — unusual for Lord pattern;
   needs verification against book.
+
+---
+
+## Round 3 changes (2026-05-16)
+
+- Flemish Spearmen: 12/15/18 (Irreg/Reg/Vet) → 10/13/16 (Green/Irreg/Reg, no Veteran),
+  with Flemish + Massed Ranks abilities updated to match book (SS 235911).
+- Removed three stat-table-header rows that were mis-captured as unit profiles by
+  the original scrape:
+  - flemish/Flemish Warriors (3 rows)
+  - medieval_scottish/Medieval Scottish Warriors (3 rows)
+  - welsh/Medieval Welsh Warriors (3 rows)
 
 ---
 
