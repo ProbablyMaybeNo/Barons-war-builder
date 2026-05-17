@@ -1800,7 +1800,8 @@ function renderUB(){
       const renderAbi=a=>{
         const ck=selN.has(a.name);
         const cmdOnly=COMMANDER_ONLY_ABIS.has(a.name.toUpperCase());
-        const slotBlocked=isC&&!ck&&atLim;
+        const isMercCompany=MERC_COMPANY_ABILITIES.has(a.name.toUpperCase());
+        const slotBlocked=isC&&!ck&&!isMercCompany&&atLim;
         const cmdBlocked=cmdOnly&&!isC&&!ck;
         const restriction=checkAbilityRestriction(a.name,_ub);
         const restrictionBlocked=restriction!==true&&!ck;
@@ -1823,13 +1824,20 @@ function renderUB(){
       // surfaced as DISABLED (greyed) checkboxes by the renderAbi helper, not hidden —
       // users should see what's possible in this retinue and why they can't take it here.
       const visible=abils.filter(a=>!inhSet.has(a.name.toUpperCase()));
+      const isMerc=a=>MERC_COMPANY_ABILITIES.has(a.name.toUpperCase());
       const character=visible.filter(a=>a.source==='character');
-      const retinue=visible.filter(a=>a.source==='retinue');
+      const mercCompany=visible.filter(a=>a.source==='retinue'&&isMerc(a));
+      const retinue=visible.filter(a=>a.source==='retinue'&&!isMerc(a));
       const universal=visible.filter(a=>a.source==='generic');
       let out='';
       if(character.length){
         out+=`<div class="ub-abi-sub">♛ ${esc(_ub.unit)} — Command Abilities</div>
           <div class="ub-abi-grid">${character.map(renderAbi).join('')}</div>`;
+      }
+      if(mercCompany.length){
+        const mercLabel=mercCompany[0]?.name||state.mercenaryCompany||'';
+        out+=`<div class="ub-abi-sub">🎖 Mercenary Company — ${esc(mercLabel)} <span class="ub-abi-legend">free Inherent — no slot used</span></div>
+          <div class="ub-abi-grid">${mercCompany.map(renderAbi).join('')}</div>`;
       }
       if(retinue.length){
         out+=`<div class="ub-abi-sub">⚜ ${esc(facLabel(fid))} Retinue Abilities</div>
