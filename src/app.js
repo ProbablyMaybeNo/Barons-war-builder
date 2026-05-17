@@ -1,4 +1,4 @@
-﻿import { BW_DATA, EQUIP, CG_UPGRADES } from '../data/game-data.js?v=20260516c-fespearmen';
+﻿import { BW_DATA, EQUIP, CG_UPGRADES } from '../data/game-data.js?v=20260517-lowlander-spear-bill';
 
 // Lite mode hides rules text (ability descriptions, faction trait tooltips, inherent ability details).
 // Activated by serving from /lite/, by ?mode=lite on the script URL, or by <body class="lite-mode">.
