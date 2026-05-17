@@ -16,6 +16,33 @@ const FACTION_LABELS = {feudal_european:'Feudal European',mercenary:'Mercenary',
 const TWO_HANDED = new Set(['Two Handed Weapon','Improvised Two Handed Weapon','Bill / Polearm','Dane Axe','Dual Daggers','Bill','Bill (Regulars)','Bow','Crossbow']);
 const COMMAND_UPGRADE_COST_OVERRIDES = {Pennant:7};
 const WEAPON_CHOICE_RANGED_OPTIONS = ['Javelin','Bow'];
+const STANDARD_TIERS = ['Green','Irregular','Regular','Veteran'];
+
+// Map a parenthesised qualifier from a profile line (e.g. "Regulars", "Regulars+",
+// "Regular+", "Veterans", "Irregulars+") onto the tiers that the item is available
+// to. Returns null when the qualifier isn't a tier restriction (e.g. footnote text
+// like "* unless equipped with Bill"), so callers leave such items unrestricted.
+function tiersFromQualifier(q){
+  if(!q)return null;
+  const m=q.trim().match(/^(Green|Irregular|Regular|Veteran)s?\+?$/i);
+  if(!m)return null;
+  const norm=m[1][0].toUpperCase()+m[1].slice(1).toLowerCase();
+  return STANDARD_TIERS.slice(STANDARD_TIERS.indexOf(norm));
+}
+function itemAllowedAtTier(name,tierMap,tier){
+  if(!STANDARD_TIERS.includes(tier))return true;
+  const allowed=tierMap?.[name];
+  return !allowed||allowed.includes(tier);
+}
+function pickFirstAllowed(items,tierMap,tier){
+  for(const it of (items||[]))if(itemAllowedAtTier(it,tierMap,tier))return it;
+  return null;
+}
+// "Bill" with allowed=['Regular','Veteran'] -> "Regular+ only"
+function tierReqLabel(allowedTiers){
+  if(!allowedTiers||!allowedTiers.length)return '';
+  return `${allowedTiers[0]}+ only`;
+}
 
 // ═══════════════════════════════════════════════════════════
 // STATE
@@ -79,19 +106,52 @@ function getAbilityLimit(unitName){
   return 2;
 }
 
+// Parse a comma-separated equipment list like "Spear, Bill (Regulars), Two Handed Weapon*"
+// into clean names plus a tier-restriction map. Strips footnote asterisks and trailing
+// parentheticals; recognised tier qualifiers populate the map. Other parentheticals (e.g.
+// "(* unless equipped with Bill)" or "(Irregulars)" on Padded) are simply ignored as gating.
+function parseEquipList(raw){
+  const names=[];
+  const tiers={};
+  for(const seg of (raw||'').split(',')){
+    let s=seg.trim();
+    if(!s)continue;
+    s=s.split(' - ')[0].trim();
+    const parenMatch=s.match(/\s*\(([^)]+)\)\s*$/);
+    let qualifier=null;
+    if(parenMatch){
+      qualifier=parenMatch[1];
+      s=s.slice(0,parenMatch.index).trim();
+    }
+    s=s.replace(/\*+$/,'').trim();
+    if(s.length<3)continue;
+    names.push(s);
+    const allowed=tiersFromQualifier(qualifier);
+    if(allowed)tiers[s]=allowed;
+  }
+  return {names,tiers};
+}
+
 function parseProfile(profile){
-  const res={weaponsMust:[],weaponsMay:[],armor:[],shields:[],mounts:[],cgUpgrades:[],cgMustFrom:'',notes:[]};
+  const res={
+    weaponsMust:[],weaponsMustTiers:{},
+    weaponsMay:[],weaponsMayTiers:{},
+    armor:[],armorTiers:{},
+    shields:[],shieldsTiers:{},
+    mounts:[],mountsTiers:{},
+    cgUpgrades:[],cgMustFrom:'',notes:[],
+  };
   if(!profile)return res;
   // Some entries (Capitano, Outlaw units) store escaped \n instead of real newlines — normalise first.
   const normalised=profile.replace(/\\n/g,'\n');
+  const assign=(key,raw)=>{const r=parseEquipList(raw);res[key]=r.names;res[key+'Tiers']=r.tiers;};
   for(const rawLine of normalised.split('\n')){
     const line=rawLine.trim();
-    const strip=s=>s.split(',').map(w=>w.trim().split(' - ')[0].replace(/\s*\([^)]*\)/g,'').replace(/\*+$/,'').trim()).filter(Boolean);
-    if(line.startsWith('Weapon, Must'))res.weaponsMust=strip(line.replace(/^Weapon, Must choose one:\s*/,''));
-    else if(line.startsWith('Weapon, May'))res.weaponsMay=strip(line.replace(/^Weapon, May choose one:\s*/,''));
-    else if(line.startsWith('Armour,'))res.armor=strip(line.replace(/^Armour,.*?choose one:\s*/,''));
-    else if(line.startsWith('Shield,'))res.shields=line.replace(/^Shield,.*?choose one:\s*/,'').split(',').map(s=>s.trim().replace(/\s*\([^)]*\)/g,'').replace(/\*$/,'').split(' - ')[0].trim()).filter(s=>s.length>2);
-    else if(line.startsWith('Mount,'))res.mounts=strip(line.replace(/^Mount,.*?choose one:\s*/,''));
+    if(line.startsWith('Weapon, Must'))assign('weaponsMust',line.replace(/^Weapon, Must choose one:\s*/,''));
+    else if(line.startsWith('Weapon, May'))assign('weaponsMay',line.replace(/^Weapon, May choose one:\s*/,''));
+    else if(line.startsWith('Armour,'))assign('armor',line.replace(/^Armour,.*?choose one:\s*/,''));
+    else if(line.startsWith('Shield,'))assign('shields',line.replace(/^Shield,.*?choose one:\s*/,''));
+    else if(line.startsWith('Mount,'))assign('mounts',line.replace(/^Mount,.*?choose one:\s*/,''));
     else if(line.startsWith('Command Group upgrades:'))res.cgUpgrades=line.replace('Command Group upgrades:','').trim().split(',').flatMap(p=>p.split(/\s+OR\s+/i).map(s=>s.trim())).filter(Boolean);
     else if(line.startsWith('Command Group must be made from:'))res.cgMustFrom=line.replace('Command Group must be made from:','').trim();
     else if(line.startsWith('Note:')||line.startsWith('Mercenary Company:')||line.startsWith('Paladin:'))res.notes.push(line);
@@ -332,9 +392,9 @@ function newRow(fid,unitName,tier,uData){
     id:state.nextId++,unit:unitName,faction_id:fid,faction_name:f?.faction_name||fid,
     kind:realKind,tier,ptsPerW:uData?.pts_per_warrior||0,
     warriors:realKind==='commander'?1:5,hasRabble:uData?.has_rabble||false,unitData:uData,
-    selWeapon:parsed.weaponsMust[0]||null,selOptWeapon:null,
-    selArmor:parsed.armor[0]||null,selShield:null,
-    selMount:parsed.mounts.length?parsed.mounts[0]:null,
+    selWeapon:pickFirstAllowed(parsed.weaponsMust,parsed.weaponsMustTiers,tier),selOptWeapon:null,
+    selArmor:pickFirstAllowed(parsed.armor,parsed.armorTiers,tier),selShield:null,
+    selMount:pickFirstAllowed(parsed.mounts,parsed.mountsTiers,tier),
     selAbilities:[],selCGUpgrades:[],miscExtra:0,
     commandGroupRowId:null,commanderRowId:null,
     _openPanel:null,
@@ -1342,7 +1402,7 @@ function doLoad(name){
     }
     // Re-sync derived fields (hasRabble, kind) from the current data file — the saved list
     // may pre-date a data fix.
-    return{
+    const out={
       ...r,
       _isChar,
       customRank,customStatIncreases,ptsPerW,
@@ -1351,6 +1411,17 @@ function doLoad(name){
       hasRabble:uData?!!uData.has_rabble:!!r.hasRabble,
       _openPanel:null,
     };
+    // Drop any equipment selection that's no longer tier-allowed (e.g. older saves picked
+    // Padded for a Green Lowlander before tier-gating was enforced).
+    if(uData&&STANDARD_TIERS.includes(out.tier)){
+      const p=parseProfile(uData.full_profile||'');
+      if(out.selWeapon&&!itemAllowedAtTier(out.selWeapon,p.weaponsMustTiers,out.tier))out.selWeapon=pickFirstAllowed(p.weaponsMust,p.weaponsMustTiers,out.tier);
+      if(out.selOptWeapon&&!itemAllowedAtTier(out.selOptWeapon,p.weaponsMayTiers,out.tier))out.selOptWeapon=null;
+      if(out.selArmor&&!itemAllowedAtTier(out.selArmor,p.armorTiers,out.tier))out.selArmor=null;
+      if(out.selShield&&!itemAllowedAtTier(out.selShield,p.shieldsTiers,out.tier))out.selShield=null;
+      if(out.selMount&&!itemAllowedAtTier(out.selMount,p.mountsTiers,out.tier))out.selMount=null;
+    }
+    return out;
   });
   // Make sure every row's faction is also in state.factions (backfill from row data)
   for(const r of state.list)if(r.faction_id&&!state.factions.includes(r.faction_id))state.factions.push(r.faction_id);
@@ -1659,14 +1730,14 @@ function renderUB(){
     h+=`<div class="ub-st">Equipment</div>`;
     const isTH=TWO_HANDED.has(_ub.selWeapon||'');
     const left=[];const right=[];
-    if(parsed.weaponsMust.length)left.push({lbl:'Weapon',f:'selWeapon',items:parsed.weaponsMust,t:'radio'});
+    if(parsed.weaponsMust.length)left.push({lbl:'Weapon',f:'selWeapon',items:parsed.weaponsMust,tiers:parsed.weaponsMustTiers,t:'radio'});
     if(parsed.weaponsMay.length){
       const isLanceOnly=parsed.weaponsMay.length===1&&parsed.weaponsMay[0]?.toLowerCase().includes('lance');
-      left.push({lbl:isLanceOnly?'Lance (optional)':'Optional Weapon',f:'selOptWeapon',items:parsed.weaponsMay,t:isLanceOnly?'check':'radio-opt'});
+      left.push({lbl:isLanceOnly?'Lance (optional)':'Optional Weapon',f:'selOptWeapon',items:parsed.weaponsMay,tiers:parsed.weaponsMayTiers,t:isLanceOnly?'check':'radio-opt'});
     }
-    if(parsed.mounts.length)left.push({lbl:'Mounts',f:'selMount',items:parsed.mounts,t:'radio'});
-    if(parsed.armor.length)right.push({lbl:'Armour',f:'selArmor',items:parsed.armor,t:'radio-opt'});
-    if(parsed.shields.length)right.push({lbl:'Shields',f:'selShield',items:parsed.shields,t:'radio-opt',blocked:isTH});
+    if(parsed.mounts.length)left.push({lbl:'Mounts',f:'selMount',items:parsed.mounts,tiers:parsed.mountsTiers,t:'radio'});
+    if(parsed.armor.length)right.push({lbl:'Armour',f:'selArmor',items:parsed.armor,tiers:parsed.armorTiers,t:'radio-opt'});
+    if(parsed.shields.length)right.push({lbl:'Shields',f:'selShield',items:parsed.shields,tiers:parsed.shieldsTiers,t:'radio-opt',blocked:isTH});
     h+=`<div class="ub-eq-cols"><div>${left.map(s=>ubEqSec(s)).join('')}</div><div>${right.map(s=>ubEqSec(s)).join('')}</div></div>`;
   }
 
@@ -1814,10 +1885,13 @@ function ubEqSec(sec){
     ${sec.items.map(item=>{
       const cost=EQUIP[item]?.cost||0;const eff=EQUIP[item]?.effect||'';const mod=EQUIP[item]?.modifier||'';
       const sel=_ub[sec.f]===item;
-      return `<label class="ub-eq-opt ${sel?'sel':''} ${blocked?'locked':''}"
+      const tierLocked=!itemAllowedAtTier(item,sec.tiers,_ub?.tier);
+      const lock=blocked||tierLocked;
+      const tierBadge=tierLocked?` <span class="ub-eq-tier-req">${esc(tierReqLabel(sec.tiers[item]))}</span>`:'';
+      return `<label class="ub-eq-opt ${sel?'sel':''} ${lock?'locked':''}"
         data-tkey="${regTip(esc(item),esc(mod),eff)}" onmouseenter="showTipKey(this.dataset.tkey)" onmouseleave="clearTip()">
-        <input type="radio" name="ub-${sec.f}" value="${esc(item)}" ${sel?'checked':''} ${blocked?'disabled':''} onchange="ubEquip('${sec.f}','${esc(item)}')">
-        <span class="ub-eq-n">${esc(item)}</span>
+        <input type="radio" name="ub-${sec.f}" value="${esc(item)}" ${sel?'checked':''} ${lock?'disabled':''} onchange="ubEquip('${sec.f}','${esc(item)}')">
+        <span class="ub-eq-n">${esc(item)}${tierBadge}</span>
         <span class="ub-eq-c">+${cost} pts</span></label>`;
     }).join('')}
   </div>`;
@@ -1850,9 +1924,9 @@ function ubChangeUnit(newUnit){
   _ub.hasRabble=!!uData.has_rabble;
   _ub.kind=isCommanderUnit(uData)?'commander':(uData.kind||'warrior');
   _ub.warriors=_ub.kind==='commander'?1:5;
-  _ub.selWeapon=parsed.weaponsMust[0]||null;_ub.selOptWeapon=null;
-  _ub.selArmor=parsed.armor[0]||null;_ub.selShield=parsed.shields[0]||null;
-  _ub.selMount=parsed.mounts.length?parsed.mounts[0]:null;
+  _ub.selWeapon=pickFirstAllowed(parsed.weaponsMust,parsed.weaponsMustTiers,_ub.tier);_ub.selOptWeapon=null;
+  _ub.selArmor=pickFirstAllowed(parsed.armor,parsed.armorTiers,_ub.tier);_ub.selShield=pickFirstAllowed(parsed.shields,parsed.shieldsTiers,_ub.tier);
+  _ub.selMount=pickFirstAllowed(parsed.mounts,parsed.mountsTiers,_ub.tier);
   _ub.selAbilities=[];_ub.selCGUpgrades=[];
   document.getElementById('ubTitle').textContent=_ub._isNew?'Add Unit':'Edit — '+newUnit;
   renderUB();
@@ -1919,15 +1993,15 @@ function ubChangeTier(newTier){
   if(!uData)return;
   _ub.tier=newTier;_ub.ptsPerW=uData.pts_per_warrior;_ub.unitData=uData;
   _ub.hasRabble=!!uData.has_rabble;
-  ubUpdateCost();
-  // Update stat block only
-  const stats=calcStats(_ub);
-  ['Move','Attack','Defence','Shield','Morale','Actions'].forEach((l,i)=>{
-    const el=document.getElementById('ubStat'+l);
-    if(el)el.textContent=[stats.move,stats.attack,stats.defence,stats.shield,stats.morale,stats.actions][i];
-  });
-  const sn=document.getElementById('ubStatNote');if(sn)sn.textContent=stats.note||'';
-  refreshAbilityGating();
+  // Drop any selection that's no longer tier-allowed. selWeapon is mandatory so we
+  // substitute the first allowed; everything else just clears.
+  const parsed=parseProfile(uData.full_profile||'');
+  if(_ub.selWeapon&&!itemAllowedAtTier(_ub.selWeapon,parsed.weaponsMustTiers,newTier))_ub.selWeapon=pickFirstAllowed(parsed.weaponsMust,parsed.weaponsMustTiers,newTier);
+  if(_ub.selOptWeapon&&!itemAllowedAtTier(_ub.selOptWeapon,parsed.weaponsMayTiers,newTier))_ub.selOptWeapon=null;
+  if(_ub.selArmor&&!itemAllowedAtTier(_ub.selArmor,parsed.armorTiers,newTier))_ub.selArmor=null;
+  if(_ub.selShield&&!itemAllowedAtTier(_ub.selShield,parsed.shieldsTiers,newTier))_ub.selShield=null;
+  if(_ub.selMount&&!itemAllowedAtTier(_ub.selMount,parsed.mountsTiers,newTier))_ub.selMount=null;
+  renderUB();
 }
 
 function ubEquip(field,val){

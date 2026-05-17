@@ -590,6 +590,8 @@ html,body{
 .ub-eq-opt.locked .ub-eq-n{color:var(--red)!important;text-decoration:line-through}
 .ub-eq-opt input{accent-color:var(--amber);width:13px;height:13px;flex-shrink:0}
 .ub-eq-n{flex:1;color:var(--text)}.ub-eq-c{font-family:'Cinzel',serif;font-size:.68rem;color:var(--bluelight);margin-left:auto;white-space:nowrap}
+.ub-eq-tier-req{display:inline-block;font-family:'Cinzel',serif;font-size:.6rem;font-weight:600;color:var(--amber2);letter-spacing:.05em;text-transform:uppercase;opacity:.85;margin-left:6px;padding:1px 5px;border:1px solid rgba(232,160,32,.4);border-radius:2px;text-decoration:none}
+.ub-eq-opt.locked .ub-eq-tier-req{color:var(--amber2)!important;text-decoration:none;opacity:1}
 .ub-eq-opt:hover .ub-eq-n{color:var(--amber2)}
 /* CG upgrades */
 .ub-cg-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
