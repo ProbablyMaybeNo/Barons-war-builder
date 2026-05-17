@@ -184,20 +184,8 @@ function classifyAbility(name){
 }
 
 const ABI_TYPE_LABEL={G:'Generic',I:'Inherent',R:'Retinue',C:'Commander'};
-// Chip glyphs are only emitted for G/R/C. 'I' is omitted because purely-inherent abilities
-// are surfaced in the dedicated Inherent section (section header already classifies them);
-// adding an 'I' chip would be redundant noise in the purchasable list.
-const ABI_TYPE_CHIP_KEYS=['G','R','C'];
 // Tooltip subtitle highlights the "special" kinds — Generic is the default so doesn't appear.
 const ABI_TYPE_TOOLTIP_KEYS=['I','R','C'];
-
-// Tiny gold letters appended after the ability name. Each letter has a native title= tooltip
-// so hovering directly on a letter (desktop) also reveals its meaning.
-function abilityTypeChipsHtml(name){
-  const types=classifyAbility(name).filter(t=>ABI_TYPE_CHIP_KEYS.includes(t));
-  if(!types.length)return'';
-  return ` <span class="abi-types">${types.map(t=>`<span class="abi-type" title="${ABI_TYPE_LABEL[t]}">${t}</span>`).join('')}</span>`;
-}
 
 // "Inherent · Commander" style subtitle for tooltips. Returns '' when no special types apply.
 function abilityTypeTooltipLabel(name){
@@ -212,7 +200,7 @@ function abilityChip(name,rule){
   const r=rule||getAbilityRule(name)||'No rule text on file — see Rules tab or printed supplement.';
   const tipLabel=abilityTypeTooltipLabel(name);
   // tap-to-toggle for touch: clicking the chip toggles .open; clicking outside closes it.
-  return `<span class="abi-chip" tabindex="0" onclick="toggleAbilityChip(event,this)"><span class="abi-chip-name">${esc(name)}${abilityTypeChipsHtml(name)}</span><span class="abi-chip-tip">${tipLabel?`<span class="abi-chip-tip-label">${esc(tipLabel)}</span>`:''}${esc(r)}</span></span>`;
+  return `<span class="abi-chip" tabindex="0" onclick="toggleAbilityChip(event,this)"><span class="abi-chip-name">${esc(name)}</span><span class="abi-chip-tip">${tipLabel?`<span class="abi-chip-tip-label">${esc(tipLabel)}</span>`:''}${esc(r)}</span></span>`;
 }
 
 // Toggle a chip open and close any others. Outside-click closes all (wired in init()).
@@ -995,12 +983,7 @@ function renderRules(){
   ];
   html+=ruleSec('⚭ Allied / Combined Retinue Rules',alliedRules.map(r=>`<div class="trait-card"><div class="trait-card-name">${esc(r.topic)}</div><div class="trait-card-text">${esc(r.text)}</div></div>`).join(''));
 
-  const typeLegend=`<div class="abi-type-legend"><strong>Ability key:</strong>
-    <span class="abi-type-legend-item"><span class="abi-type">G</span> Generic — any faction</span>
-    <span class="abi-type-legend-item"><span class="abi-type">R</span> Retinue-specific</span>
-    <span class="abi-type-legend-item"><span class="abi-type">C</span> Commander only</span>
-  </div>`;
-  html+=ruleSec('✦ Universal Abilities',typeLegend+BW_DATA.purchasable.map((a,i)=>abiRefItem(a.name,a.cost,a.effect,'gen-'+i)).join(''));
+  html+=ruleSec('✦ Universal Abilities',BW_DATA.purchasable.map((a,i)=>abiRefItem(a.name,a.cost,a.effect,'gen-'+i)).join(''));
 
   // Equipment reference
   const kinds=['melee','missile','armour_shield','mount'];
@@ -1092,7 +1075,7 @@ function ruleSec(title,bodyHtml){
 function abiRefItem(name,cost,effect,key){
   const cs=cost!=null?`${cost} pts`:'Inherent';
   return `<div class="abi-ref-item" id="aref-${key}">
-    <div class="abi-ref-hdr"><span class="abi-ref-name">${esc(name)}${abilityTypeChipsHtml(name)}</span><span class="abi-ref-cost">${esc(cs)}</span></div>
+    <div class="abi-ref-hdr"><span class="abi-ref-name">${esc(name)}</span><span class="abi-ref-cost">${esc(cs)}</span></div>
     <div class="abi-ref-effect">${esc(effect||'')}</div>
   </div>`;
 }
@@ -1682,7 +1665,7 @@ function renderUB(){
       left.push({lbl:isLanceOnly?'Lance (optional)':'Optional Weapon',f:'selOptWeapon',items:parsed.weaponsMay,t:isLanceOnly?'check':'radio-opt'});
     }
     if(parsed.mounts.length)left.push({lbl:'Mounts',f:'selMount',items:parsed.mounts,t:'radio'});
-    if(parsed.armor.length)right.push({lbl:'Armour',f:'selArmor',items:parsed.armor,t:'radio'});
+    if(parsed.armor.length)right.push({lbl:'Armour',f:'selArmor',items:parsed.armor,t:'radio-opt'});
     if(parsed.shields.length)right.push({lbl:'Shields',f:'selShield',items:parsed.shields,t:'radio-opt',blocked:isTH});
     h+=`<div class="ub-eq-cols"><div>${left.map(s=>ubEqSec(s)).join('')}</div><div>${right.map(s=>ubEqSec(s)).join('')}</div></div>`;
   }
@@ -1759,7 +1742,7 @@ function renderUB(){
         const tipAttrs=LITE_MODE?'':`data-tkey="${tk}" onmouseenter="showTipKey(this.dataset.tkey)" onmouseleave="clearTip()"`;
         return `<label class="ub-abi-it ${ck?'ck':''} ${dis?'dis':''}" ${tipAttrs} ${blockReason?`title="Disabled: ${esc(blockReason)}"`:''}>
           <input type="checkbox" ${ck?'checked':''} ${dis?'disabled':''} onchange="ubTogAbi('${esc(a.name)}',${a.cost||0},this.checked)">
-          <span class="ub-an">${esc(a.name)}${abilityTypeChipsHtml(a.name)}${cmdOnly?' <span class="ub-an-cmd" title="Commander only">⚔</span>':''}</span>
+          <span class="ub-an">${esc(a.name)}${cmdOnly?' <span class="ub-an-cmd" title="Commander only">⚔</span>':''}</span>
           <span class="ub-ac">+${a.cost||0}</span></label>`;
       };
       // Filter out abilities that the unit already has as Inherent — they're baked into the unit cost

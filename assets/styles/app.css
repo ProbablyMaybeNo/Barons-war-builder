@@ -440,16 +440,8 @@ html,body{
 .bc-kind.warrior{background:rgba(242,136,75,.15);color:var(--bluelight)}
 .bc-abilities{font-size:.75rem;color:var(--text3);font-style:italic;margin-bottom:7px}
 .bc-abilities-chips{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:7px}
-/* Ability-type chips (G/R/C) — render as small gold letters appended after an ability name. */
-.abi-types{display:inline-flex;gap:3px;margin-left:2px;vertical-align:baseline}
-.abi-type{font-family:'Cinzel',serif;font-size:.62rem;font-weight:700;color:var(--amber2);letter-spacing:.05em;cursor:help;opacity:.85}
-.abi-type:hover{opacity:1}
 /* Tooltip subtitle line, e.g. "Inherent · Commander" */
 .abi-chip-tip-label{display:block;font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;color:var(--amber2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px;padding-bottom:5px;border-bottom:1px solid var(--border2)}
-.abi-type-legend{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 12px;padding:7px 11px;background:var(--card);border:1px solid var(--border2);border-radius:4px;font-size:.78rem;color:var(--text3)}
-.abi-type-legend--mini{margin:0 0 10px;padding:5px 9px;font-size:.72rem;gap:8px}
-.abi-type-legend strong{font-family:'Cinzel',serif;color:var(--amber2);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;margin-right:4px}
-.abi-type-legend-item{display:inline-flex;align-items:center;gap:4px}
 .cbc-chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:8px}
 .bc-tiers{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
 
