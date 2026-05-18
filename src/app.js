@@ -2286,26 +2286,25 @@ function renderRow(row){
   const inhTags=inherent.map(a=>`<span class="r-tag-ai">${esc(a)}</span>`).join('');
   const abiTags=(row.selAbilities||[]).map(a=>`<span class="r-tag-a">${esc(a.name)}</span>`).join('');
   const hasTags=eqTags||cgTags||inhTags||abiTags;
-  // CG assignment — restrict candidates to the same faction as the commander, and to
-  // warriors whose Universal/Retinue ability picks the commander also shares.
+  // CG assignment — list every same-faction warrior that matches the commander's CG type
+  // constraint, with ineligible picks (no shared Universal/Retinue ability) disabled and
+  // marked rather than hidden, so the section is always discoverable.
   const cgRequirement=parsed.cgMust||parsed.cgMustFrom;
-  const baseCands=isC?state.list.filter(r=>r.id!==row.id&&r.kind!=='commander'&&r.faction_id===row.faction_id&&cgMatch(r.unit,cgRequirement)):[];
-  const eligible=baseCands.filter(r=>cmdCanTakeGroup(row,r));
-  // Always include the currently-assigned warrior in the dropdown so a now-invalid pairing
-  // is visible (rather than silently disappearing) and can be fixed by the user.
-  const currentAssigned=row.commandGroupRowId?baseCands.find(r=>r.id===row.commandGroupRowId):null;
-  const cgCands=(currentAssigned&&!eligible.some(r=>r.id===currentAssigned.id))?[...eligible,currentAssigned]:eligible;
-  const blockedByAbility=isC&&baseCands.length>eligible.length;
+  const cgCands=isC?state.list.filter(r=>r.id!==row.id&&r.kind!=='commander'&&r.faction_id===row.faction_id&&cgMatch(r.unit,cgRequirement)):[];
   const cgEmptyHint=cgRequirement
     ?`Add <strong>${esc(cgRequirement)}</strong> to the list, then assign here.`
-    :(blockedByAbility
-      ?'No eligible groups — warriors with a Universal/Retinue ability can only join a commander who shares the same ability.'
-      :'Add a Warrior Group to this retinue, then assign here.');
+    :'Add a Warrior Group to this retinue, then assign here.';
   const cgAssign=isC?`<div class="rrow-cg">
     <span class="rrow-cg-lbl">⚑ Group</span>
     ${cgCands.length?`<select class="rrow-cg-sel" onchange="assignCG(${row.id},this.value)">
       <option value="">— Unassigned —</option>
-      ${cgCands.map(c=>{const ok=cmdCanTakeGroup(row,c);return `<option value="${c.id}" ${c.id===row.commandGroupRowId?'selected':''}>${esc(c.unit)} (${esc(c.tier)}, ×${c.warriors||1})${ok?'':' ⚠'}</option>`;}).join('')}
+      ${cgCands.map(c=>{
+        const ok=cmdCanTakeGroup(row,c);
+        const isCurrent=c.id===row.commandGroupRowId;
+        const disabled=!ok&&!isCurrent;
+        const note=ok?'':' ⚠ no shared ability';
+        return `<option value="${c.id}" ${isCurrent?'selected':''} ${disabled?'disabled':''}>${esc(c.unit)} (${esc(c.tier)}, ×${c.warriors||1})${note}</option>`;
+      }).join('')}
     </select>`:`<span class="rrow-cg-hint">${cgEmptyHint}</span>`}
     </div>`:'';
   return `<div class="rrow ${isC?'cmd-row':'war-row'}${isChar?' char-row':''}" onclick="rrowTap(event,${row.id})">
