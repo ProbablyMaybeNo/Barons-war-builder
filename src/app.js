@@ -789,13 +789,6 @@ function checkFactionLegality(fid){
     if(missing.length)alerts.push(`⚠ ${label}: Command Group "${esc(cg.unit)}" has ${missing.map(n=>esc(n)).join(', ')} — commander "${esc(c.unit)}" must also take ${missing.length>1?'these abilities':'this ability'}`);
   }
 
-  const purchasableNames=new Set(BW_DATA.purchasable.map(a=>a.name));
-  const abilityCounts={};
-  for(const r of rows)for(const a of (r.selAbilities||[]))abilityCounts[a.name]=(abilityCounts[a.name]||0)+1;
-  for(const[name,count]of Object.entries(abilityCounts)){
-    if(count>1&&purchasableNames.has(name))alerts.push(`⚠ ${label}: Purchasable Ability "${esc(name)}" used ${count}× (once per Retinue)`);
-  }
-
   const namedCounts={};
   for(const r of rows)if(r.tier==='Named')namedCounts[r.unit]=(namedCounts[r.unit]||0)+1;
   for(const[name,count]of Object.entries(namedCounts)){
