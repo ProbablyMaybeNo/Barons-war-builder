@@ -382,6 +382,9 @@ function getBoundAbilities(row){
 }
 
 function cmdCanTakeGroup(cmdRow,warriorRow){
+  // Named characters (dramatis personae) are exempt from the shared-ability rule —
+  // they can take any otherwise-eligible warrior group regardless of bound abilities.
+  if(cmdRow?.tier==='Named'&&!cmdRow?._isCustom)return true;
   const bound=getBoundAbilities(warriorRow);
   if(!bound.size)return true;
   const have=rowAbilities(cmdRow);
