@@ -1470,7 +1470,9 @@ function init(){
 // ═══════════════════════════════════════════════════════
 // STATS ENGINE
 // ═══════════════════════════════════════════════════════
-const BASE_STATS={Green:{atk:8,def:8,mor:8},Irregular:{atk:7,def:7,mor:7},Regular:{atk:6,def:6,mor:6},Veteran:{atk:5,def:5,mor:5}};
+// Defence is a flat 7+ baseline for all warrior tiers per Barons' War rules — only armor modifies it.
+// Tier scales Attack and Morale.
+const BASE_STATS={Green:{atk:8,def:7,mor:8},Irregular:{atk:7,def:7,mor:7},Regular:{atk:6,def:7,mor:6},Veteran:{atk:5,def:7,mor:5}};
 const EQ_MOD={'Padded':{move:-1,def:-1},'Mail':{move:-2,def:-2},'Small Shield':{shld:9},'Medium Shield':{shld:8},'Large Shield':{shld:7},'Horse':{move:3},'Barded Horse':{move:3,def:-1},'Pony':{move:2}};
 
 // Knight Commander Generator (Custom Commanders) — see King John supplement, T247/T249.
