@@ -352,6 +352,43 @@ function getAvailableAbilities(fid){
   return [...genericFiltered,...retinue].sort((a,b)=>a.name.localeCompare(b.name));
 }
 
+// Normalize ability names so qualifiers like "(Regulars)" don't break equality checks.
+function _normAbi(n){return (n||'').replace(/\s*\([^)]*\)\s*$/,'').trim().toUpperCase();}
+
+// Every ability the row carries — selected, inherent, or built-in for named characters.
+// Used to decide whether a commander shares the abilities a warrior group requires.
+function rowAbilities(row){
+  const out=new Set();
+  if(Array.isArray(row?.selAbilities))for(const a of row.selAbilities)out.add(_normAbi(a.name));
+  if(row?._isChar){
+    const ch=BW_DATA.dramatis.find(d=>d.name===row.unit);
+    if(ch){
+      for(const a of (ch.inherent_abilities||[]))out.add(_normAbi(a));
+      for(const a of (ch.character_abilities_struct||[]))out.add(_normAbi(a.name));
+    }
+  } else if(row?.unitData){
+    for(const a of getInherent(row.unitData.full_profile||''))out.add(_normAbi(a));
+  }
+  return out;
+}
+
+// Subset of selAbilities that are Universal (purchasable) or Retinue abilities — these
+// constrain which commander the warrior group can join (commander must share each one).
+function getBoundAbilities(row){
+  if(!Array.isArray(row?.selAbilities))return new Set();
+  const universal=new Set(BW_DATA.purchasable.map(a=>_normAbi(a.name)));
+  const retinue=new Set(BW_DATA.retinue_abilities.map(a=>_normAbi(a.ability)));
+  return new Set(row.selAbilities.map(a=>_normAbi(a.name)).filter(n=>universal.has(n)||retinue.has(n)));
+}
+
+function cmdCanTakeGroup(cmdRow,warriorRow){
+  const bound=getBoundAbilities(warriorRow);
+  if(!bound.size)return true;
+  const have=rowAbilities(cmdRow);
+  for(const n of bound)if(!have.has(n))return false;
+  return true;
+}
+
 function getCommandUpgrade(name){
   const upgrade=CG_UPGRADES[name]||{cost:0,effect:'See core rulebook.'};
   const override=COMMAND_UPGRADE_COST_OVERRIDES[name];
@@ -738,6 +775,19 @@ function checkFactionLegality(fid){
   }
 
   for(const c of cmds)if(!c.commandGroupRowId)alerts.push(`⚠ ${label}: ${esc(c.unit)} has no Command Group assigned`);
+
+  // Command Group ability lock: warrior's Universal/Retinue ability picks must each be
+  // shared by the commander (selected or inherent).
+  for(const c of cmds){
+    if(!c.commandGroupRowId)continue;
+    const cg=rows.find(r=>r.id===c.commandGroupRowId);
+    if(!cg)continue;
+    const bound=getBoundAbilities(cg);
+    if(!bound.size)continue;
+    const have=rowAbilities(c);
+    const missing=[...bound].filter(n=>!have.has(n));
+    if(missing.length)alerts.push(`⚠ ${label}: Command Group "${esc(cg.unit)}" has ${missing.map(n=>esc(n)).join(', ')} — commander "${esc(c.unit)}" must also take ${missing.length>1?'these abilities':'this ability'}`);
+  }
 
   const purchasableNames=new Set(BW_DATA.purchasable.map(a=>a.name));
   const abilityCounts={};
@@ -2236,17 +2286,26 @@ function renderRow(row){
   const inhTags=inherent.map(a=>`<span class="r-tag-ai">${esc(a)}</span>`).join('');
   const abiTags=(row.selAbilities||[]).map(a=>`<span class="r-tag-a">${esc(a.name)}</span>`).join('');
   const hasTags=eqTags||cgTags||inhTags||abiTags;
-  // CG assignment — restrict candidates to the same faction as the commander
+  // CG assignment — restrict candidates to the same faction as the commander, and to
+  // warriors whose Universal/Retinue ability picks the commander also shares.
   const cgRequirement=parsed.cgMust||parsed.cgMustFrom;
-  const cgCands=isC?state.list.filter(r=>r.id!==row.id&&r.kind!=='commander'&&r.faction_id===row.faction_id&&cgMatch(r.unit,cgRequirement)):[];
+  const baseCands=isC?state.list.filter(r=>r.id!==row.id&&r.kind!=='commander'&&r.faction_id===row.faction_id&&cgMatch(r.unit,cgRequirement)):[];
+  const eligible=baseCands.filter(r=>cmdCanTakeGroup(row,r));
+  // Always include the currently-assigned warrior in the dropdown so a now-invalid pairing
+  // is visible (rather than silently disappearing) and can be fixed by the user.
+  const currentAssigned=row.commandGroupRowId?baseCands.find(r=>r.id===row.commandGroupRowId):null;
+  const cgCands=(currentAssigned&&!eligible.some(r=>r.id===currentAssigned.id))?[...eligible,currentAssigned]:eligible;
+  const blockedByAbility=isC&&baseCands.length>eligible.length;
   const cgEmptyHint=cgRequirement
     ?`Add <strong>${esc(cgRequirement)}</strong> to the list, then assign here.`
-    :'Add a Warrior Group to this retinue, then assign here.';
+    :(blockedByAbility
+      ?'No eligible groups — warriors with a Universal/Retinue ability can only join a commander who shares the same ability.'
+      :'Add a Warrior Group to this retinue, then assign here.');
   const cgAssign=isC?`<div class="rrow-cg">
     <span class="rrow-cg-lbl">⚑ Group</span>
     ${cgCands.length?`<select class="rrow-cg-sel" onchange="assignCG(${row.id},this.value)">
       <option value="">— Unassigned —</option>
-      ${cgCands.map(c=>`<option value="${c.id}" ${c.id===row.commandGroupRowId?'selected':''}>${esc(c.unit)} (${esc(c.tier)}, ×${c.warriors||1})</option>`).join('')}
+      ${cgCands.map(c=>{const ok=cmdCanTakeGroup(row,c);return `<option value="${c.id}" ${c.id===row.commandGroupRowId?'selected':''}>${esc(c.unit)} (${esc(c.tier)}, ×${c.warriors||1})${ok?'':' ⚠'}</option>`;}).join('')}
     </select>`:`<span class="rrow-cg-hint">${cgEmptyHint}</span>`}
     </div>`:'';
   return `<div class="rrow ${isC?'cmd-row':'war-row'}${isChar?' char-row':''}" onclick="rrowTap(event,${row.id})">
