@@ -1,0 +1,4 @@
+# Cloudflare Pages only — GitHub Pages ignores this file.
+# Send root URL to the Lite builder on Cloudflare; the full builder
+# stays accessible on GitHub Pages where this file is not honoured.
+/  /lite/  302

@@ -1,31 +1,183 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Barons' War List Builder</title>
-<meta http-equiv="refresh" content="0; url=./lite/">
-<link rel="canonical" href="./lite/">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;0,500&display=swap" rel="stylesheet">
-<style>
-  html, body { margin: 0; padding: 0; background: #1a1410; color: #e8dcc0; font-family: 'Crimson Pro', Georgia, serif; min-height: 100vh; }
-  .wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; box-sizing: border-box; }
-  .card { max-width: 520px; text-align: center; }
-  h1 { font-family: 'Cinzel', serif; font-weight: 600; font-size: 1.6rem; letter-spacing: .04em; margin: 0 0 16px; color: #d4b87a; }
-  p { font-size: 1.05rem; line-height: 1.5; margin: 0 0 20px; }
-  a.btn { display: inline-block; padding: 10px 22px; border: 1px solid #d4b87a; color: #d4b87a; text-decoration: none; font-family: 'Cinzel', serif; letter-spacing: .06em; font-size: .95rem; }
-  a.btn:hover { background: #d4b87a; color: #1a1410; }
-  .small { font-size: .85rem; opacity: .7; margin-top: 24px; }
-</style>
-<script>window.location.replace('./lite/');</script>
+<title>Barons' War — King John</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./assets/styles/app.css?v=20260517d-merc-subsection">
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <h1>Barons' War List Builder</h1>
-    <p>Redirecting you to the Lite version&hellip;</p>
-    <p><a class="btn" href="./lite/">Open Lite Builder</a></p>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-logo">⚔ Barons' War <span>✦ King John</span></div>
+  <div class="tb-div"></div>
+  <span class="tb-cap-label">Cap</span>
+  <input type="number" class="tb-cap-input" id="ptsCap" value="500" min="100" max="9999" step="50">
+  <div class="pts-wrap">
+    <div class="pts-bar-bg"><div class="pts-bar-fill" id="ptsBarFill" style="width:0%"></div></div>
+    <div class="pts-nums" id="ptsNums"><span class="sp" id="ptsSpent">0</span> / <span id="ptsCap2">500</span> pts</div>
+  </div>
+  <div class="tb-ml"></div>
+  <button class="tb-btn tb-btn-desktop" onclick="openSaveModal()">💾 Save / Load</button>
+  <button class="tb-btn tb-btn-desktop" onclick="openExportModal()">📤 Export</button>
+  <button class="tb-btn tb-btn-mobile" id="tbMenuBtn" onclick="openMobileMenu()" aria-label="Menu">⋯</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-section">
+    <div class="sb-heading">Retinues</div>
+    <div id="retinueList"></div>
+    <div class="sb-add-row">
+      <button class="sb-add-btn" id="sbAddRetBtn" onclick="toggleAddRetinue()">+ Add Retinue</button>
+    </div>
+    <div id="factionPicker" class="sb-faction-picker" style="display:none"></div>
+  </div>
+  <div class="sb-section" id="sbListBuilder" style="display:none">
+    <div class="sb-heading" id="sbLbHeading">List Status</div>
+    <div class="sb-lb">
+      <div id="sidebarIssues" class="sb-issues" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content" id="main-content" role="main">
+  <div class="content-view" id="view-retinue">
+    <div class="p-inner">
+      <div id="retinueFactionHdr" style="display:none"></div>
+      <div class="rcard-grid" id="rcardGrid"></div>
+      <div class="empty-state" id="emptyState">
+        <h3>Your Retinue is Empty</h3>
+        <p class="empty-lead empty-lead--desktop">Select a Retinue from the sidebar to get started.</p>
+        <p class="empty-lead empty-lead--mobile">Tap <span class="empty-fleur" aria-hidden="true">⚜</span> <strong>Retinues</strong> in the bar at the bottom of the screen to open the list and add a retinue.</p>
+        <p class="prompt empty-prompt--desktop">← Then use <strong>+ Units</strong> to add warriors to your list.</p>
+        <p class="prompt empty-prompt--mobile"><span class="empty-fleur" aria-hidden="true">⚜</span> Then use <strong>+ Units</strong> on a retinue card to add warriors.</p>
+      </div>
+      <div class="retinue-total" id="retinueTotal" style="display:none">
+        <span class="rt-label">Total Points Spent</span>
+        <span class="rt-pts" id="retinueTotalPts">0</span>
+      </div>
+    </div>
+  </div>
+</div><!-- /content -->
+</div><!-- /main -->
+
+<!-- MOBILE BOTTOM BAR (mobile-only via CSS) -->
+<div class="m-bottom-bar" id="mBottomBar">
+  <button class="m-bb-trigger" onclick="openMobileDrawer()" aria-label="Open retinues panel">
+    <span class="m-bb-trigger-icon">⚜</span>
+    <span class="m-bb-trigger-lbl">Retinues</span>
+    <span class="m-bb-cnt" id="mBbRetinueCnt">0</span>
+  </button>
+  <div class="m-bb-pts" id="mBbPts">
+    <span class="m-bb-pts-spent" id="mBbSpent">0</span>
+    <span class="m-bb-pts-sep">/</span>
+    <span class="m-bb-pts-cap" id="mBbCap">500</span>
+    <span class="m-bb-pts-lbl">pts</span>
+  </div>
+</div>
+
+<!-- MOBILE DRAWER BACKDROP -->
+<div class="m-drawer-bd" id="mDrawerBd" onclick="closeMobileDrawer()"></div>
+
+</div><!-- /app -->
+
+<!-- MOBILE MENU MODAL -->
+<div class="modal-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)closeMobileMenu()">
+  <div class="save-modal m-menu-modal">
+    <div class="save-modal-hdr">
+      <div class="save-modal-title">⚔ Menu</div>
+      <button class="modal-close" onclick="closeMobileMenu()">✕</button>
+    </div>
+    <div class="save-modal-body">
+      <div class="m-menu-cap-row">
+        <span class="sm-label" style="margin:0">Points Cap</span>
+        <input type="number" class="tb-cap-input m-menu-cap-input" id="mMenuCap" min="100" max="9999" step="50">
+      </div>
+      <button class="sm-btn m-menu-btn" onclick="closeMobileMenu();openSaveModal()">💾 Save / Load</button>
+      <button class="sm-btn m-menu-btn" onclick="closeMobileMenu();openExportModal()">📤 Export</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="exportModalOverlay" onclick="if(event.target===this)closeExportModal()">
+  <div class="save-modal export-modal">
+    <div class="save-modal-hdr">
+      <div class="save-modal-title">📤 Export List</div>
+      <button class="modal-close" onclick="closeExportModal()">✕</button>
+    </div>
+    <div class="save-modal-body">
+      <div class="export-actions">
+        <button class="sm-btn" id="exportCopyBtn" onclick="exportCopyText()">📋 Copy as Text</button>
+        <button class="sm-btn" onclick="exportDownloadJSON()">💾 Download JSON</button>
+      </div>
+      <div class="sm-label">Plain text (auto-copies to clipboard on open)</div>
+      <textarea id="exportTextArea" class="export-textarea" readonly></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE MODAL -->
+<div class="modal-overlay" id="saveModalOverlay" onclick="if(event.target===this)closeSaveModal()">
+  <div class="save-modal">
+    <div class="save-modal-hdr">
+      <div class="save-modal-title">💾 Save / Load Retinues</div>
+      <button class="modal-close" onclick="closeSaveModal()">✕</button>
+    </div>
+    <div class="save-modal-body">
+      <div class="sm-label">Save current retinue</div>
+      <div class="sm-row">
+        <input type="text" class="sm-input" id="saveNameInput" placeholder="Retinue name…" maxlength="40">
+        <button class="sm-btn" onclick="doSave()">Save</button>
+      </div>
+      <div class="sm-label">Saved retinues</div>
+      <div id="savedListContainer"></div>
+    </div>
+  </div>
+</div>
+
+
+<script type="module" src="./src/app.js?v=20260518b-drop-dup-abi-warning"></script>
+
+<!-- UNIT BUILDER MODAL -->
+<div class="modal-overlay" id="ubOverlay" onclick="if(event.target===this)closeUB()">
+  <div class="ub-modal">
+    <div class="ub-main">
+      <div class="ub-hdr">
+        <span class="ub-hdr-title" id="ubTitle">Unit Builder</span>
+        <button class="ub-close" onclick="closeUB()">✕</button>
+      </div>
+      <div class="ub-scroll" id="ubScroll"></div>
+      <div class="ub-cost-bar">
+        <div class="ub-cost-l">
+          <span class="ub-cost-lbl">Unit Cost</span>
+          <div class="ub-cost-bd" id="ubBd"></div>
+        </div>
+        <div class="ub-cost-pts" id="ubCostPts">0 pts</div>
+        <div class="ub-btns">
+          <button class="ub-cancel" onclick="closeUB()">Cancel</button>
+          <button class="ub-save" onclick="saveUB()">Save</button>
+        </div>
+      </div>
+    </div>
+    <div class="ub-tip" id="ubTip">
+      <div class="ub-tip-hdr" onclick="toggleTipMin()">
+        <span class="ub-tip-hdr-lbl">Rules</span>
+        <button class="ub-tip-min" id="ubTipMin" type="button" aria-label="Minimize rules panel" aria-expanded="true">▾</button>
+      </div>
+      <div class="ub-tip-body" id="ubTipBody"><div class="ub-tip-empty">Tap an option to see its rules</div></div>
+    </div>
   </div>
 </div>
 </body>
 </html>
+
